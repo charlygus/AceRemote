@@ -1,1 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Mi Sports Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
 
+    <header>
+        <div class="header-content">
+            <h1><i class="fa-solid fa-satellite-dish"></i> En Vivo</h1>
+            <button onclick="cargarEventos()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
+        </div>
+    </header>
+
+    <div id="loader" class="loader">Buscando señales...</div>
+    
+    <main id="contenedor-eventos">
+        </main>
+
+    <div id="toast">¡ID Copiado al portapapeles!</div>
+
+    <script>
+        // ==========================================
+        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        // ==========================================
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
+
+        async function cargarEventos() {
+            const container = document.getElementById('contenedor-eventos');
+            const loader = document.getElementById('loader');
+            
+            container.innerHTML = ''; // Limpiar lista
+            loader.style.display = 'block'; // Mostrar cargando
+
+            try {
+                const response = await fetch(API_URL);
+                const datos = await response.json();
+                
+                loader.style.display = 'none'; // Ocultar cargando
+
+                if (datos.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#888;">No se encontraron eventos.</p>';
+                    return;
+                }
+
+                datos.forEach(item => {
+                    // Crear tarjeta
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    // Definir icono según origen
+                    let iconClass = item.origen === 'PimpleTV' ? 'fa-futbol' : 'fa-tv';
+                    
+                    card.innerHTML = `
+                        <div class="card-info">
+                            <span class="badge ${item.origen.toLowerCase()}">${item.origen}</span>
+                            <h3><i class="fa-solid ${iconClass}"></i> ${item.titulo || 'Canal Desconocido'}</h3>
+                            <small>ID: ${item.id.substring(0, 8)}...</small>
+                        </div>
+                        <button class="copy-btn" onclick="copiarID('${item.id}')">
+                            <i class="fa-regular fa-copy"></i> COPIAR
+                        </button>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                loader.style.display = 'none';
+                container.innerHTML = '<p style="text-align:center; color:red;">Error conectando con el servidor.</p>';
+                console.error(error);
+            }
+        }
+
+        // Función para copiar y avisar
+        function copiarID(texto) {
+            navigator.clipboard.writeText(texto).then(() => {
+                mostrarToast();
+            }).catch(err => {
+                alert('Error copiando: ' + err);
+            });
+        }
+
+        function mostrarToast() {
+            const toast = document.getElementById("toast");
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        // Cargar al iniciar
+        cargarEventos();
+    </script>
+</body>
+</html>
