@@ -1,3 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>AceRemote</title>
+    
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AceRemote">
+</head>
 <body>
 
     <header>
@@ -11,7 +30,7 @@
                 <i class="fa-solid fa-arrows-rotate"></i>
             </button>
         </div>
-        
+
         <div class="search-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -37,7 +56,7 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
-        let categoriaActual = 'TODAS'; // Para saber qué pestaña estamos viendo
+        let categoriaActual = 'TODAS';
 
         async function iniciarCarga() {
             const container = document.getElementById('contenedor-eventos');
@@ -49,9 +68,8 @@
             container.innerHTML = ''; 
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
-            searchInput.value = ''; // Limpiar buscador al recargar
+            searchInput.value = ''; // Resetear búsqueda
             
-            // Animación
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
@@ -82,26 +100,26 @@
             }
         }
 
-        // --- NUEVA FUNCIÓN DE BÚSQUEDA ---
+        // --- LÓGICA DE BÚSQUEDA ---
         function filtrarBusqueda() {
             const texto = document.getElementById('searchInput').value.toLowerCase();
             
-            // Si hay texto, buscamos en TODOS los datos (ignorando pestañas)
-            // Si no hay texto, volvemos a la categoría que estaba seleccionada
             if (texto.length > 0) {
-                // Desactivar visualmente las pestañas porque estamos buscando globalmente
+                // Desactiva pestañas visualmente
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 
+                // Busca en todo (Título + Categoría)
                 const filtrados = todosLosDatos.filter(item => {
                     const contenido = (item.titulo + ' ' + item.categoria).toLowerCase();
                     return contenido.includes(texto);
                 });
                 
-                renderizar(filtrados, true); // true = modo búsqueda
+                renderizar(filtrados, true); // true = es búsqueda
             } else {
-                // Restaurar pestaña actual
+                // Si borra el texto, volver a la pestaña activa
                 const btnActual = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerText === categoriaActual || (categoriaActual === 'TODAS' && b.innerText === 'Todo'));
                 if(btnActual) filtrar(categoriaActual, btnActual);
+                else renderizar(todosLosDatos);
             }
         }
 
@@ -140,8 +158,7 @@
                 let icono = 'fa-tv';
                 const textoCompleto = (item.titulo + item.categoria).toUpperCase();
                 
-                // Lógica de iconos
-                if (textoCompleto.includes('FÚTBOL') || textoCompleto.includes('SOCCER') || textoCompleto.includes('LIGA') || textoCompleto.includes('CHAMPIONS')) icono = 'fa-futbol';
+                if (textoCompleto.includes('FÚTBOL') || textoCompleto.includes('SOCCER') || textoCompleto.includes('LIGA')) icono = 'fa-futbol';
                 else if (textoCompleto.includes('MOTOR') || textoCompleto.includes('F1') || textoCompleto.includes('MOTO')) icono = 'fa-car';
                 else if (textoCompleto.includes('NBA') || textoCompleto.includes('BASKET')) icono = 'fa-basketball';
                 else if (textoCompleto.includes('NFL')) icono = 'fa-football';
@@ -169,8 +186,8 @@
         }
 
         function filtrar(categoria, btn) {
-            categoriaActual = categoria; // Guardamos dónde estamos
-            document.getElementById('searchInput').value = ''; // Limpiar buscador al cambiar pestaña
+            categoriaActual = categoria;
+            document.getElementById('searchInput').value = ''; // Limpiar buscador al cambiar de pestaña
 
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -187,11 +204,13 @@
             if (navigator.vibrate) navigator.vibrate(50);
             
             navigator.clipboard.writeText(texto).then(() => {
+                // Reset visual
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
                 document.querySelectorAll('.track-meta').forEach(m => {
                     if(m.innerText === "¡COPIADO!") m.innerText = m.getAttribute('data-original') || m.innerText;
                 });
 
+                // Activar actual
                 elementoFila.classList.add('copied');
                 
                 const meta = elementoFila.querySelector('.track-meta');
@@ -210,3 +229,4 @@
         iniciarCarga();
     </script>
 </body>
+</html>
