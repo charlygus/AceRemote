@@ -13,13 +13,10 @@
 
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="manifest.json">
-
     <link rel="apple-touch-icon" href="icon.png">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AceRemote">
-
 </head>
 <body>
 
@@ -64,7 +61,7 @@
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
             
-            // Animación de números
+            // Animación Fake Loader
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
@@ -97,6 +94,7 @@
 
         function generarPestanas(datos) {
             const tabsContainer = document.getElementById('tabs-container');
+            // Ordenar categorías alfabéticamente
             const categoriasUnicas = [...new Set(datos.map(item => item.categoria))].sort();
 
             const btnTodas = document.createElement('button');
@@ -106,7 +104,7 @@
             tabsContainer.appendChild(btnTodas);
 
             categoriasUnicas.forEach(cat => {
-                if(cat && cat !== 'undefined') {
+                if(cat && cat !== 'undefined' && cat !== '') {
                     const btn = document.createElement('button');
                     btn.className = 'tab-btn';
                     btn.innerText = cat; 
@@ -127,14 +125,17 @@
 
             lista.forEach(item => {
                 let icono = 'fa-tv';
+                // Detección inteligente de iconos
                 const textoCompleto = (item.titulo + item.categoria).toUpperCase();
                 if (textoCompleto.includes('FÚTBOL') || textoCompleto.includes('SOCCER')) icono = 'fa-futbol';
                 if (textoCompleto.includes('MOTOR') || textoCompleto.includes('F1')) icono = 'fa-car';
                 if (textoCompleto.includes('NBA') || textoCompleto.includes('BASKET')) icono = 'fa-basketball';
                 if (textoCompleto.includes('NFL')) icono = 'fa-football';
+                if (textoCompleto.includes('HOCKEY') || textoCompleto.includes('NHL')) icono = 'fa-hockey-puck';
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
+                // Click en toda la fila para copiar
                 row.onclick = function() { copiarID(item.id, this); };
                 
                 row.innerHTML = `
@@ -143,10 +144,10 @@
                     </div>
                     <div class="track-info">
                         <div class="track-title">${item.titulo}</div>
-                        <div class="track-meta">${item.origen} • Toca para copiar</div>
+                        <div class="track-meta">${item.origen}</div>
                     </div>
                     <div class="action-icon">
-                        <i class="fa-regular fa-copy" style="color:#555;"></i>
+                        <i class="fa-regular fa-copy" style="color:#444;"></i>
                     </div>
                 `;
                 container.appendChild(row);
@@ -167,20 +168,28 @@
 
         function copiarID(texto, elementoFila) {
             if (navigator.vibrate) navigator.vibrate(50);
+            
             navigator.clipboard.writeText(texto).then(() => {
+                // Reset visual de otros
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
+                document.querySelectorAll('.track-meta').forEach(m => {
+                    if(m.innerText === "¡COPIADO!") m.innerText = m.getAttribute('data-original') || m.innerText;
+                });
+
+                // Activar actual
                 elementoFila.classList.add('copied');
                 
                 const meta = elementoFila.querySelector('.track-meta');
                 const iconBox = elementoFila.querySelector('.track-icon-box');
-                const iconAction = elementoFila.querySelector('.action-icon');
-
-                meta.innerText = "¡ID COPIADO LISTO PARA PEGAR!";
+                
+                // Guardamos texto original por si acaso
+                if(!meta.getAttribute('data-original')) meta.setAttribute('data-original', meta.innerText);
+                
+                meta.innerText = "¡COPIADO!";
                 iconBox.innerHTML = '<i class="fa-solid fa-check"></i>';
-                iconAction.innerHTML = '<i class="fa-solid fa-check" style="color:#1DB954;"></i>';
                 
             }).catch(err => {
-                alert('Error copiando. Permisos denegados.');
+                alert('Error copiando.');
             });
         }
 
