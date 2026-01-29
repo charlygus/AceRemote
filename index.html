@@ -27,7 +27,7 @@
         <div class="search-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Buscar canal o partido..." onkeyup="filtrarBusqueda()">
+                <input type="text" id="searchInput" placeholder="Buscar partido o canal..." onkeyup="filtrarBusqueda()">
             </div>
         </div>
     </header>
@@ -41,6 +41,7 @@
     <main id="contenedor-eventos"></main>
 
     <script>
+        // REEMPLAZA CON TU URL DE APPS SCRIPT
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
@@ -91,6 +92,7 @@
             btnTodas.onclick = function() { filtrar('TODAS', this); };
             tabsContainer.appendChild(btnTodas);
 
+            // PRIORIDAD PIMPLE TV: La ponemos siempre la primera
             const indexPimple = categorias.indexOf("PIMPLE TV");
             if (indexPimple !== -1) {
                 categorias.splice(indexPimple, 1);
@@ -112,7 +114,7 @@
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
             if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales ahora.</p>`;
                 return;
             }
             lista.forEach(item => {
