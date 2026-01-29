@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <title>AceRemote</title>
-    
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="AceRemote">
 </head>
 <body>
 
@@ -25,34 +21,28 @@
                 <img src="icon.png" alt="Logo" class="app-logo">
                 <h1>AceRemote</h1>
             </div>
-            
             <button onclick="iniciarCarga()" class="refresh-btn">
                 <i class="fa-solid fa-arrows-rotate"></i>
             </button>
         </div>
-
         <div class="search-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Buscar" onkeyup="filtrarBusqueda()">
+                <input type="text" id="searchInput" placeholder="Buscar canal o partido..." onkeyup="filtrarBusqueda()">
             </div>
         </div>
     </header>
 
-    <div id="tabs-container" class="tabs">
-        </div>
+    <div id="tabs-container" class="tabs"></div>
 
     <div id="loader" class="loader-container">
         <div id="loader-text" class="loader-text">0%</div>
     </div>
     
-    <main id="contenedor-eventos">
-        </main>
+    <main id="contenedor-eventos"></main>
 
     <script>
-        // ==========================================
-        // URL DE GOOGLE APPS SCRIPT
-        // ==========================================
+        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
@@ -63,18 +53,15 @@
             const tabsContainer = document.getElementById('tabs-container');
             const loader = document.getElementById('loader');
             const loaderText = document.getElementById('loader-text');
-            const searchInput = document.getElementById('searchInput');
             
             container.innerHTML = ''; 
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
-            searchInput.value = ''; // Resetear búsqueda
             
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
                     porcentaje += Math.floor(Math.random() * 8) + 1;
-                    if (porcentaje > 99) porcentaje = 99;
                     loaderText.innerText = porcentaje + '%';
                 }
             }, 400);
@@ -82,50 +69,23 @@
             try {
                 const response = await fetch(API_URL);
                 const datos = await response.json();
-                
                 clearInterval(intervalo);
                 loaderText.innerText = '100%';
-                
                 setTimeout(() => {
                     loader.style.display = 'none';
                     todosLosDatos = datos;
                     generarPestanas(datos);
                     renderizar(datos);
                 }, 300);
-
             } catch (error) {
                 clearInterval(intervalo);
                 loaderText.innerText = 'Error';
-                loaderText.style.color = 'red';
-            }
-        }
-
-        // --- LÓGICA DE BÚSQUEDA ---
-        function filtrarBusqueda() {
-            const texto = document.getElementById('searchInput').value.toLowerCase();
-            
-            if (texto.length > 0) {
-                // Desactiva pestañas visualmente
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                
-                // Busca en todo (Título + Categoría)
-                const filtrados = todosLosDatos.filter(item => {
-                    const contenido = (item.titulo + ' ' + item.categoria).toLowerCase();
-                    return contenido.includes(texto);
-                });
-                
-                renderizar(filtrados, true); // true = es búsqueda
-            } else {
-                // Si borra el texto, volver a la pestaña activa
-                const btnActual = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerText === categoriaActual || (categoriaActual === 'TODAS' && b.innerText === 'Todo'));
-                if(btnActual) filtrar(categoriaActual, btnActual);
-                else renderizar(todosLosDatos);
             }
         }
 
         function generarPestanas(datos) {
             const tabsContainer = document.getElementById('tabs-container');
-            const categoriasUnicas = [...new Set(datos.map(item => item.categoria))].sort();
+            let categorias = [...new Set(datos.map(item => item.categoria))].sort();
 
             const btnTodas = document.createElement('button');
             btnTodas.className = 'tab-btn active';
@@ -133,8 +93,15 @@
             btnTodas.onclick = function() { filtrar('TODAS', this); };
             tabsContainer.appendChild(btnTodas);
 
-            categoriasUnicas.forEach(cat => {
-                if(cat && cat !== 'undefined' && cat !== '') {
+            // PRIORIDAD PIMPLE TV: La ponemos justo después de "Todo"
+            const indexPimple = categorias.indexOf("PIMPLE TV");
+            if (indexPimple !== -1) {
+                categorias.splice(indexPimple, 1);
+                categorias.unshift("PIMPLE TV");
+            }
+
+            categorias.forEach(cat => {
+                if(cat) {
                     const btn = document.createElement('button');
                     btn.className = 'tab-btn';
                     btn.innerText = cat; 
@@ -147,39 +114,27 @@
         function renderizar(lista, esBusqueda = false) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
-
             if (lista.length === 0) {
-                const mensaje = esBusqueda ? 'No encuentro ese canal.' : 'Nada por aquí.';
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">${mensaje}</p>`;
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">Nada por aquí.</p>`;
                 return;
             }
-
             lista.forEach(item => {
                 let icono = 'fa-tv';
-                const textoCompleto = (item.titulo + item.categoria).toUpperCase();
-                
-                if (textoCompleto.includes('FÚTBOL') || textoCompleto.includes('SOCCER') || textoCompleto.includes('LIGA')) icono = 'fa-futbol';
-                else if (textoCompleto.includes('MOTOR') || textoCompleto.includes('F1') || textoCompleto.includes('MOTO')) icono = 'fa-car';
-                else if (textoCompleto.includes('NBA') || textoCompleto.includes('BASKET')) icono = 'fa-basketball';
-                else if (textoCompleto.includes('NFL')) icono = 'fa-football';
-                else if (textoCompleto.includes('HOCKEY') || textoCompleto.includes('NHL')) icono = 'fa-hockey-puck';
-                else if (textoCompleto.includes('UFC') || textoCompleto.includes('BOX')) icono = 'fa-hand-fist';
+                const txt = (item.titulo + item.categoria).toUpperCase();
+                if (txt.includes('FÚTBOL') || txt.includes('SOCCER')) icono = 'fa-futbol';
+                else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car';
+                else if (txt.includes('NBA')) icono = 'fa-basketball';
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
                 row.onclick = function() { copiarID(item.id, this); };
-                
                 row.innerHTML = `
-                    <div class="track-icon-box">
-                        <i class="fa-solid ${icono}"></i>
-                    </div>
+                    <div class="track-icon-box"><i class="fa-solid ${icono}"></i></div>
                     <div class="track-info">
                         <div class="track-title">${item.titulo}</div>
                         <div class="track-meta">${item.origen}</div>
                     </div>
-                    <div class="action-icon">
-                        <i class="fa-regular fa-copy" style="color:#444;"></i>
-                    </div>
+                    <div class="action-icon"><i class="fa-regular fa-copy"></i></div>
                 `;
                 container.appendChild(row);
             });
@@ -187,42 +142,27 @@
 
         function filtrar(categoria, btn) {
             categoriaActual = categoria;
-            document.getElementById('searchInput').value = ''; // Limpiar buscador al cambiar de pestaña
-
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            renderizar(categoria === 'TODAS' ? todosLosDatos : todosLosDatos.filter(i => i.categoria === categoria));
+        }
 
-            if (categoria === 'TODAS') {
-                renderizar(todosLosDatos);
+        function filtrarBusqueda() {
+            const texto = document.getElementById('searchInput').value.toLowerCase();
+            if (texto.length > 0) {
+                renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)), true);
             } else {
-                renderizar(todosLosDatos.filter(item => item.categoria === categoria));
+                renderizar(categoriaActual === 'TODAS' ? todosLosDatos : todosLosDatos.filter(i => i.categoria === categoriaActual));
             }
         }
 
         function copiarID(texto, elementoFila) {
             if (navigator.vibrate) navigator.vibrate(50);
-            
             navigator.clipboard.writeText(texto).then(() => {
-                // Reset visual
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
-                document.querySelectorAll('.track-meta').forEach(m => {
-                    if(m.innerText === "¡COPIADO!") m.innerText = m.getAttribute('data-original') || m.innerText;
-                });
-
-                // Activar actual
                 elementoFila.classList.add('copied');
-                
-                const meta = elementoFila.querySelector('.track-meta');
-                const iconBox = elementoFila.querySelector('.track-icon-box');
-                
-                if(!meta.getAttribute('data-original')) meta.setAttribute('data-original', meta.innerText);
-                
-                meta.innerText = "¡COPIADO!";
-                iconBox.innerHTML = '<i class="fa-solid fa-check"></i>';
-                
-            }).catch(err => {
-                alert('Error copiando.');
+                elementoFila.querySelector('.track-meta').innerText = "¡COPIADO!";
             });
         }
 
