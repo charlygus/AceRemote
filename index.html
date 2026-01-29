@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sports Hub V7</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StreamHub</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -11,7 +11,7 @@
 
     <header>
         <div class="header-content">
-            <h1><i class="fa-solid fa-satellite-dish"></i> En Vivo</h1>
+            <h1>Descubrir</h1>
             <button onclick="iniciarCarga()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
         </div>
     </header>
@@ -19,101 +19,78 @@
     <div id="tabs-container" class="tabs">
         </div>
 
-    <div id="progress-area" class="progress-container">
-        <div style="font-weight:bold; color:white;">Escaneando satélites...</div>
-        <div class="progress-bar-bg">
-            <div id="progress-fill" class="progress-bar-fill"></div>
-        </div>
-        <div id="progress-text" class="progress-text">0%</div>
+    <div id="loader" class="loader-container">
+        <div id="loader-text" class="loader-text">0%</div>
     </div>
     
     <main id="contenedor-eventos">
         </main>
 
-    <div id="toast">¡ID Copiado!</div>
-
     <script>
         // ==========================================
-        // PEGA AQUÍ TU URL ACTUALIZADA
+        // PEGA TU URL DE GOOGLE APPS SCRIPT AQUÍ
         // ==========================================
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
+        const API_URL = 'PEGA_TU_URL_DE_GOOGLE_AQUI'; 
 
         let todosLosDatos = []; 
 
         async function iniciarCarga() {
             const container = document.getElementById('contenedor-eventos');
             const tabsContainer = document.getElementById('tabs-container');
-            const progressArea = document.getElementById('progress-area');
-            const fill = document.getElementById('progress-fill');
-            const text = document.getElementById('progress-text');
+            const loader = document.getElementById('loader');
+            const loaderText = document.getElementById('loader-text');
             
             container.innerHTML = ''; 
-            tabsContainer.innerHTML = ''; // Limpiar pestañas viejas
-            progressArea.style.display = 'block';
+            tabsContainer.innerHTML = '';
+            loader.style.display = 'block';
             
-            // Animación Fake
+            // Animación de números
             let porcentaje = 0;
             let intervalo = setInterval(() => {
-                if (porcentaje < 95) {
-                    porcentaje += Math.floor(Math.random() * 5) + 1;
-                    if (porcentaje > 95) porcentaje = 95;
-                    fill.style.width = porcentaje + '%';
-                    text.innerText = porcentaje + '%';
+                if (porcentaje < 98) {
+                    porcentaje += Math.floor(Math.random() * 8) + 1;
+                    if (porcentaje > 99) porcentaje = 99;
+                    loaderText.innerText = porcentaje + '%';
                 }
-            }, 600);
+            }, 400);
 
             try {
                 const response = await fetch(API_URL);
                 const datos = await response.json();
                 
                 clearInterval(intervalo);
-                fill.style.width = '100%';
-                text.innerText = '100%';
+                loaderText.innerText = '100%';
                 
                 setTimeout(() => {
-                    progressArea.style.display = 'none';
+                    loader.style.display = 'none';
                     todosLosDatos = datos;
-                    
-                    // PASO 1: Generar Pestañas Dinámicas
                     generarPestanas(datos);
-                    
-                    // PASO 2: Mostrar Todo por defecto
                     renderizar(datos);
-                    
-                }, 500);
+                }, 300);
 
             } catch (error) {
                 clearInterval(intervalo);
-                progressArea.style.display = 'none';
-                container.innerHTML = '<p style="text-align:center; color:red;">Error de conexión.</p>';
+                loaderText.innerText = 'Error';
+                loaderText.style.color = 'red';
             }
         }
 
         function generarPestanas(datos) {
             const tabsContainer = document.getElementById('tabs-container');
-            
-            // 1. Obtener categorías únicas
-            // Usamos un Set para eliminar duplicados
             const categoriasUnicas = [...new Set(datos.map(item => item.categoria))].sort();
 
-            // 2. Botón "Todas" (Primero siempre)
+            // Botón "Todo"
             const btnTodas = document.createElement('button');
             btnTodas.className = 'tab-btn active';
-            btnTodas.innerText = 'TODAS';
+            btnTodas.innerText = 'Todo';
             btnTodas.onclick = function() { filtrar('TODAS', this); };
             tabsContainer.appendChild(btnTodas);
 
-            // 3. Botones Dinámicos
             categoriasUnicas.forEach(cat => {
-                // Solo crear pestaña si la categoría tiene nombre (evitar vacíos)
                 if(cat && cat !== 'undefined') {
-                    // Contar cuántos hay de esta categoría
-                    const cantidad = datos.filter(d => d.categoria === cat).length;
-                    
                     const btn = document.createElement('button');
                     btn.className = 'tab-btn';
-                    // Nombre + (Cantidad) ej: NHL (5)
-                    btn.innerText = `${cat} (${cantidad})`; 
+                    btn.innerText = cat; // Ya no mostramos el número para ser más limpios
                     btn.onclick = function() { filtrar(cat, this); };
                     tabsContainer.appendChild(btn);
                 }
@@ -125,49 +102,87 @@
             container.innerHTML = '';
 
             if (lista.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:#555;">Sin resultados.</p>';
+                container.innerHTML = '<p style="text-align:center; color:#555; margin-top:40px;">Nada por aquí.</p>';
                 return;
             }
 
             lista.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'card';
+                // Seleccionar icono basado en el título o categoría
+                let icono = 'fa-tv';
+                if (item.titulo.includes('FÚTBOL') || item.categoria.includes('FÚTBOL')) icono = 'fa-futbol';
+                if (item.categoria.includes('MOTOR')) icono = 'fa-car';
+                if (item.categoria.includes('NBA')) icono = 'fa-basketball';
+
+                const row = document.createElement('div');
+                row.className = 'track-row';
+                // Al hacer click en CUALQUIER PARTE de la fila, se copia
+                row.onclick = function() { copiarID(item.id, this); };
                 
-                card.innerHTML = `
-                    <div class="card-info">
-                        <h3><i class="fa-solid fa-tv"></i> ${item.titulo}</h3>
-                        <small>ID: ${item.id.substring(0, 12)}...</small>
+                row.innerHTML = `
+                    <div class="track-icon-box">
+                        <i class="fa-solid ${icono}"></i>
                     </div>
-                    <button class="copy-btn" onclick="copiarID('${item.id}')">
-                        <i class="fa-regular fa-copy"></i>
-                    </button>
+                    <div class="track-info">
+                        <div class="track-title">${item.titulo}</div>
+                        <div class="track-meta">${item.origen} • Toca para copiar</div>
+                    </div>
+                    <div class="action-icon">
+                        <i class="fa-regular fa-copy" style="color:#555;"></i>
+                    </div>
                 `;
-                container.appendChild(card);
+                container.appendChild(row);
             });
         }
 
         function filtrar(categoria, btn) {
-            // Gestión visual (negritas, rojo)
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
+            // Scroll suave del botón al centro si es necesario
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
             if (categoria === 'TODAS') {
                 renderizar(todosLosDatos);
             } else {
-                const filtrados = todosLosDatos.filter(item => item.categoria === categoria);
-                renderizar(filtrados);
+                renderizar(todosLosDatos.filter(item => item.categoria === categoria));
             }
         }
 
-        function copiarID(texto) {
+        function copiarID(texto, elementoFila) {
+            // 1. Vibración (Haptic Feedback) si el móvil lo soporta
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            // 2. Copiar al portapapeles
             navigator.clipboard.writeText(texto).then(() => {
-                const toast = document.getElementById("toast");
-                toast.className = "show";
-                setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+                
+                // 3. Transformación Visual (La magia)
+                // Quitamos la clase 'copied' de cualquier otro que estuviera activo
+                document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
+                
+                // Activamos ESTA fila
+                elementoFila.classList.add('copied');
+                
+                // Cambiamos el texto y el icono temporalmente
+                const titulo = elementoFila.querySelector('.track-title');
+                const meta = elementoFila.querySelector('.track-meta');
+                const iconBox = elementoFila.querySelector('.track-icon-box');
+                const iconAction = elementoFila.querySelector('.action-icon');
+
+                const textoOriginal = titulo.innerText;
+                
+                // Feedback inmediato
+                meta.innerText = "¡ID COPIADO LISTO PARA PEGAR!";
+                iconBox.innerHTML = '<i class="fa-solid fa-check"></i>';
+                iconAction.innerHTML = '<i class="fa-solid fa-check" style="color:#1DB954;"></i>';
+
+                // (Opcional) Volver al estado normal tras 5 segundos
+                // Pero a veces es útil dejarlo verde para saber cual probaste el último.
+                
+            }).catch(err => {
+                alert('Error copiando. Permisos denegados.');
             });
         }
 
-        // Arrancar
         iniciarCarga();
     </script>
 </body>
