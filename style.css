@@ -1,16 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-/* --- BASE --- */
 body {
-    background-color: #000000; /* Negro Puro */
+    background-color: #000000;
     color: #FFFFFF;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', sans-serif;
     margin: 0;
-    padding-bottom: 80px; 
+    padding-bottom: 80px;
     -webkit-tap-highlight-color: transparent;
 }
 
-/* --- HEADER (Contenedor Principal) --- */
 header {
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(10px);
@@ -20,191 +18,46 @@ header {
     border-bottom: 1px solid #1a1a1a;
 }
 
-/* Fila Superior: Logo y Botón Recarga */
 .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 16px 5px 16px; /* Menos padding abajo para el buscador */
+    padding: 15px 16px 5px 16px;
 }
 
-.brand-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+.brand-container { display: flex; align-items: center; gap: 12px; }
+.app-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
+h1 { font-size: 1.3rem; font-weight: 700; margin: 0; }
+.refresh-btn { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
 
-.app-logo {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-h1 {
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: -0.5px;
-}
-
-.refresh-btn {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 8px;
-}
-
-/* --- BARRA DE BÚSQUEDA (Estilo iOS) --- */
-.search-container {
-    padding: 10px 16px 15px 16px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.search-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #888;
-    font-size: 0.9rem;
-}
-
+.search-container { padding: 10px 16px 15px 16px; }
+.search-wrapper { position: relative; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; }
 #searchInput {
-    width: 100%;
-    background-color: #1c1c1e; /* Gris oscuro iOS */
-    border: none;
-    border-radius: 10px;
-    padding: 10px 10px 10px 36px; /* Espacio a la izq para la lupa */
-    color: #fff;
-    font-size: 1rem;
-    font-family: 'Inter', sans-serif;
-    outline: none;
-    box-sizing: border-box;
+    width: 100%; background-color: #1c1c1e; border: none; border-radius: 10px;
+    padding: 10px 10px 10px 36px; color: #fff; font-size: 1rem; outline: none; box-sizing: border-box;
 }
 
-#searchInput::placeholder {
-    color: #666;
-}
-
-#searchInput:focus {
-    background-color: #2c2c2e;
-}
-
-/* --- PESTAÑAS (Estilo Chips/Pills) --- */
 .tabs {
-    display: flex;
-    overflow-x: auto;
-    padding: 12px 16px;
-    background: #000;
-    position: sticky;
-    /* Ajuste crítico: Header (aprox 110px) */
-    top: 112px; 
-    z-index: 90;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    border-bottom: 1px solid #1a1a1a;
+    display: flex; overflow-x: auto; padding: 12px 16px; background: #000;
+    position: sticky; top: 112px; z-index: 90; scrollbar-width: none; border-bottom: 1px solid #1a1a1a;
 }
-
 .tabs::-webkit-scrollbar { display: none; }
-
 .tab-btn {
-    background: #1F1F1F;
-    border: 1px solid #333;
-    color: #fff;
-    padding: 8px 18px;
-    margin-right: 8px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: all 0.2s ease;
+    background: #1F1F1F; border: 1px solid #333; color: #fff; padding: 8px 18px;
+    margin-right: 8px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; white-space: nowrap;
 }
+.tab-btn.active { background: #1DB954; border-color: #1DB954; color: #000; }
 
-.tab-btn.active {
-    background: #1DB954; /* Verde Spotify */
-    border-color: #1DB954;
-    color: #000;
-}
-
-/* --- LISTA DE REPRODUCCIÓN (Canales) --- */
-#contenedor-eventos {
-    padding: 0 16px;
-}
-
-.track-row {
-    display: flex;
-    align-items: center;
-    padding: 16px 0;
-    border-bottom: 1px solid #1a1a1a;
-    cursor: pointer;
-    transition: background 0.1s;
-}
-
-.track-row:active {
-    background-color: #111;
-}
-
-.track-icon-box {
-    width: 42px;
-    height: 42px;
-    background: #121212;
-    border-radius: 6px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-right: 16px;
-    font-size: 1.1rem;
-    color: #B3B3B3;
-}
-
-.track-info {
-    flex: 1;
-    overflow: hidden;
-}
-
-.track-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 4px;
-}
-
-.track-meta {
-    font-size: 0.75rem;
-    color: #888;
-}
-
-/* Estado COPIADO */
+#contenedor-eventos { padding: 0 16px; }
+.track-row { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid #1a1a1a; }
+.track-icon-box { width: 42px; height: 42px; background: #121212; border-radius: 6px; display: flex; justify-content: center; align-items: center; margin-right: 16px; color: #B3B3B3; }
+.track-info { flex: 1; overflow: hidden; }
+.track-title { font-size: 0.95rem; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+.track-meta { font-size: 0.75rem; color: #888; }
 .track-row.copied .track-title { color: #1DB954; }
 .track-row.copied .track-icon-box { background: #1DB954; color: #000; }
 
-/* --- LOADER --- */
-.loader-container {
-    text-align: center;
-    padding: 40px;
-    display: none;
-}
-.loader-text {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #333;
-    background: linear-gradient(90deg, #333 0%, #fff 50%, #333 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 2s linear infinite;
-}
-
+.loader-container { text-align: center; padding: 40px; display: none; }
+.loader-text { font-size: 1.5rem; font-weight: 700; background: linear-gradient(90deg, #333 0%, #fff 50%, #333 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 2s linear infinite; }
 @keyframes shine { to { background-position: 200% center; } }
