@@ -112,7 +112,7 @@
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
             if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales disponibles.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales.</p>`;
                 return;
             }
             lista.forEach(item => {
@@ -165,7 +165,7 @@
             });
         }
 
-            iniciarCarga();
+        iniciarCarga();
     </script>
 </body>
 </html>
