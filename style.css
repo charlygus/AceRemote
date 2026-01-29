@@ -1,154 +1,50 @@
-/* Reset básico y modo oscuro */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #121212;
-    color: #e0e0e0;
-    margin: 0;
-    padding-bottom: 50px;
-}
+/* ... MANTÉN TODO LO ANTERIOR (Body, Card, etc) ... */
 
-/* Cabecera pegajosa */
-header {
+/* MODIFICACIÓN: Menú de Pestañas con Scroll */
+.tabs {
+    display: flex;
+    justify-content: flex-start; /* Alineado a la izquierda */
     background-color: #1f1f1f;
-    padding: 15px 20px;
+    padding: 10px 5px;
+    margin-bottom: 20px;
     position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    top: 60px;
+    z-index: 90;
     border-bottom: 1px solid #333;
+    
+    /* MAGIA DEL SCROLL */
+    overflow-x: auto; /* Permite scroll lateral */
+    white-space: nowrap; /* Evita que los botones bajen de línea */
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
+    scrollbar-width: none; /* Ocultar barra en Firefox */
 }
 
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-h1 {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #ffffff;
-}
-
-h1 i { color: #e50914; margin-right: 8px; }
-
-.refresh-btn {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1.2rem;
-    cursor: pointer;
-}
-
-/* Contenedor principal */
-#contenedor-eventos {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 0 15px;
-}
-
-/* Tarjeta del evento */
-.card {
-    background-color: #1e1e1e;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #333;
-    transition: transform 0.2s;
-}
-
-.card:active {
-    transform: scale(0.98); /* Efecto de pulsación en móvil */
-}
-
-.card-info {
-    flex: 1;
-    padding-right: 10px;
-}
-
-.card h3 {
-    margin: 5px 0;
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-.card small {
-    color: #888;
-    font-family: monospace;
-}
-
-/* Etiquetas (Badges) */
-.badge {
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    font-weight: bold;
-}
-
-.badge.pimpletv { background-color: #2e7d32; color: white; }
-.badge.acestreamid { background-color: #1565c0; color: white; }
-
-/* Botón de Copiar */
-.copy-btn {
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #555;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.copy-btn:hover {
-    background-color: #444;
-}
-
-/* Loader */
-.loader {
-    text-align: center;
-    padding: 20px;
-    color: #888;
-    font-style: italic;
+/* Ocultar barra de scroll en Chrome/Safari */
+.tabs::-webkit-scrollbar {
     display: none;
 }
 
-/* Toast (Notificación flotante) */
-#toast {
-    visibility: hidden;
-    min-width: 250px;
-    background-color: #333;
+.tab-btn {
+    flex: 0 0 auto; /* No encoger ni estirar */
+    background: #2a2a2a; /* Fondo gris suave para que parezcan botones */
+    border: 1px solid #333;
+    border-radius: 20px; /* Redondeados */
+    color: #aaa;
+    padding: 8px 16px;
+    margin: 0 5px; /* Separación entre botones */
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.3s;
+}
+
+.tab-btn.active {
+    background-color: #e50914; /* Rojo activo */
     color: #fff;
-    text-align: center;
-    border-radius: 50px;
-    padding: 16px;
-    position: fixed;
-    z-index: 1;
-    left: 50%;
-    bottom: 30px;
-    transform: translateX(-50%);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    border: 1px solid #4caf50;
+    border-color: #e50914;
+    box-shadow: 0 2px 8px rgba(229, 9, 20, 0.4);
 }
 
-#toast.show {
-    visibility: visible;
-    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    animation: fadein 0.5s, fadeout 0.5s 2.5s;
-}
-
-@keyframes fadein {
-    from {bottom: 0; opacity: 0;}
-    to {bottom: 30px; opacity: 1;}
-}
-
-@keyframes fadeout {
-    from {bottom: 30px; opacity: 1;}
-    to {bottom: 0; opacity: 0;}
-}
+/* Badge simple ya que la categoría está en la pestaña */
+.badge { display: none; } /* Ocultamos badge dentro de la tarjeta para limpiar diseño */
