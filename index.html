@@ -42,7 +42,7 @@
     <main id="contenedor-eventos"></main>
 
     <script>
-        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        // PEGA TU URL DE GOOGLE APPS SCRIPT AQUÍ
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
@@ -93,7 +93,7 @@
             btnTodas.onclick = function() { filtrar('TODAS', this); };
             tabsContainer.appendChild(btnTodas);
 
-            // PRIORIDAD PIMPLE TV: La ponemos justo después de "Todo"
+            // PRIORIDAD PIMPLE TV
             const indexPimple = categorias.indexOf("PIMPLE TV");
             if (indexPimple !== -1) {
                 categorias.splice(indexPimple, 1);
@@ -115,7 +115,7 @@
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
             if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">Nada por aquí.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales activos ahora.</p>`;
                 return;
             }
             lista.forEach(item => {
@@ -132,7 +132,7 @@
                     <div class="track-icon-box"><i class="fa-solid ${icono}"></i></div>
                     <div class="track-info">
                         <div class="track-title">${item.titulo}</div>
-                        <div class="track-meta">${item.origen}</div>
+                        <div class="track-meta">${item.origen} • Toca para copiar</div>
                     </div>
                     <div class="action-icon"><i class="fa-regular fa-copy"></i></div>
                 `;
