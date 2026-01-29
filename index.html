@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Mi Sports Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Hub V7</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -11,86 +12,163 @@
     <header>
         <div class="header-content">
             <h1><i class="fa-solid fa-satellite-dish"></i> En Vivo</h1>
-            <button onclick="cargarEventos()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button onclick="iniciarCarga()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
         </div>
     </header>
 
-    <div id="loader" class="loader">Buscando señales...</div>
+    <div id="tabs-container" class="tabs">
+        </div>
+
+    <div id="progress-area" class="progress-container">
+        <div style="font-weight:bold; color:white;">Escaneando satélites...</div>
+        <div class="progress-bar-bg">
+            <div id="progress-fill" class="progress-bar-fill"></div>
+        </div>
+        <div id="progress-text" class="progress-text">0%</div>
+    </div>
     
     <main id="contenedor-eventos">
         </main>
 
-    <div id="toast">¡ID Copiado al portapapeles!</div>
+    <div id="toast">¡ID Copiado!</div>
 
     <script>
         // ==========================================
-        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        // PEGA AQUÍ TU URL ACTUALIZADA
         // ==========================================
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
+        const API_URL = 'PEGA_TU_URL_DE_GOOGLE_AQUI'; 
 
-        async function cargarEventos() {
+        let todosLosDatos = []; 
+
+        async function iniciarCarga() {
             const container = document.getElementById('contenedor-eventos');
-            const loader = document.getElementById('loader');
+            const tabsContainer = document.getElementById('tabs-container');
+            const progressArea = document.getElementById('progress-area');
+            const fill = document.getElementById('progress-fill');
+            const text = document.getElementById('progress-text');
             
-            container.innerHTML = ''; // Limpiar lista
-            loader.style.display = 'block'; // Mostrar cargando
+            container.innerHTML = ''; 
+            tabsContainer.innerHTML = ''; // Limpiar pestañas viejas
+            progressArea.style.display = 'block';
+            
+            // Animación Fake
+            let porcentaje = 0;
+            let intervalo = setInterval(() => {
+                if (porcentaje < 95) {
+                    porcentaje += Math.floor(Math.random() * 5) + 1;
+                    if (porcentaje > 95) porcentaje = 95;
+                    fill.style.width = porcentaje + '%';
+                    text.innerText = porcentaje + '%';
+                }
+            }, 600);
 
             try {
                 const response = await fetch(API_URL);
                 const datos = await response.json();
                 
-                loader.style.display = 'none'; // Ocultar cargando
-
-                if (datos.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; color:#888;">No se encontraron eventos.</p>';
-                    return;
-                }
-
-                datos.forEach(item => {
-                    // Crear tarjeta
-                    const card = document.createElement('div');
-                    card.className = 'card';
+                clearInterval(intervalo);
+                fill.style.width = '100%';
+                text.innerText = '100%';
+                
+                setTimeout(() => {
+                    progressArea.style.display = 'none';
+                    todosLosDatos = datos;
                     
-                    // Definir icono según origen
-                    let iconClass = item.origen === 'PimpleTV' ? 'fa-futbol' : 'fa-tv';
+                    // PASO 1: Generar Pestañas Dinámicas
+                    generarPestanas(datos);
                     
-                    card.innerHTML = `
-                        <div class="card-info">
-                            <span class="badge ${item.origen.toLowerCase()}">${item.origen}</span>
-                            <h3><i class="fa-solid ${iconClass}"></i> ${item.titulo || 'Canal Desconocido'}</h3>
-                            <small>ID: ${item.id.substring(0, 8)}...</small>
-                        </div>
-                        <button class="copy-btn" onclick="copiarID('${item.id}')">
-                            <i class="fa-regular fa-copy"></i> COPIAR
-                        </button>
-                    `;
-                    container.appendChild(card);
-                });
+                    // PASO 2: Mostrar Todo por defecto
+                    renderizar(datos);
+                    
+                }, 500);
 
             } catch (error) {
-                loader.style.display = 'none';
-                container.innerHTML = '<p style="text-align:center; color:red;">Error conectando con el servidor.</p>';
-                console.error(error);
+                clearInterval(intervalo);
+                progressArea.style.display = 'none';
+                container.innerHTML = '<p style="text-align:center; color:red;">Error de conexión.</p>';
             }
         }
 
-        // Función para copiar y avisar
-        function copiarID(texto) {
-            navigator.clipboard.writeText(texto).then(() => {
-                mostrarToast();
-            }).catch(err => {
-                alert('Error copiando: ' + err);
+        function generarPestanas(datos) {
+            const tabsContainer = document.getElementById('tabs-container');
+            
+            // 1. Obtener categorías únicas
+            // Usamos un Set para eliminar duplicados
+            const categoriasUnicas = [...new Set(datos.map(item => item.categoria))].sort();
+
+            // 2. Botón "Todas" (Primero siempre)
+            const btnTodas = document.createElement('button');
+            btnTodas.className = 'tab-btn active';
+            btnTodas.innerText = 'TODAS';
+            btnTodas.onclick = function() { filtrar('TODAS', this); };
+            tabsContainer.appendChild(btnTodas);
+
+            // 3. Botones Dinámicos
+            categoriasUnicas.forEach(cat => {
+                // Solo crear pestaña si la categoría tiene nombre (evitar vacíos)
+                if(cat && cat !== 'undefined') {
+                    // Contar cuántos hay de esta categoría
+                    const cantidad = datos.filter(d => d.categoria === cat).length;
+                    
+                    const btn = document.createElement('button');
+                    btn.className = 'tab-btn';
+                    // Nombre + (Cantidad) ej: NHL (5)
+                    btn.innerText = `${cat} (${cantidad})`; 
+                    btn.onclick = function() { filtrar(cat, this); };
+                    tabsContainer.appendChild(btn);
+                }
             });
         }
 
-        function mostrarToast() {
-            const toast = document.getElementById("toast");
-            toast.className = "show";
-            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        function renderizar(lista) {
+            const container = document.getElementById('contenedor-eventos');
+            container.innerHTML = '';
+
+            if (lista.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#555;">Sin resultados.</p>';
+                return;
+            }
+
+            lista.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                card.innerHTML = `
+                    <div class="card-info">
+                        <h3><i class="fa-solid fa-tv"></i> ${item.titulo}</h3>
+                        <small>ID: ${item.id.substring(0, 12)}...</small>
+                    </div>
+                    <button class="copy-btn" onclick="copiarID('${item.id}')">
+                        <i class="fa-regular fa-copy"></i>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
         }
 
-        // Cargar al iniciar
-        cargarEventos();
+        function filtrar(categoria, btn) {
+            // Gestión visual (negritas, rojo)
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (categoria === 'TODAS') {
+                renderizar(todosLosDatos);
+            } else {
+                const filtrados = todosLosDatos.filter(item => item.categoria === categoria);
+                renderizar(filtrados);
+            }
+        }
+
+        function copiarID(texto) {
+            navigator.clipboard.writeText(texto).then(() => {
+                const toast = document.getElementById("toast");
+                toast.className = "show";
+                setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+            });
+        }
+
+        // Arrancar
+        iniciarCarga();
     </script>
 </body>
 </html>
