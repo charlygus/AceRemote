@@ -1,158 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+/* ... resto de tu CSS anterior ... */
 
-/* --- BASE --- */
-body {
-    background-color: #000000; /* Negro Spotify */
-    color: #FFFFFF;
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    padding-bottom: 80px; /* Espacio para scroll final */
-    -webkit-tap-highlight-color: transparent; /* Quita el flash azul feo en iPhone */
-}
-
-/* --- HEADER --- */
-header {
-    background: rgba(0, 0, 0, 0.9); /* Casi opaco */
-    backdrop-filter: blur(10px); /* Efecto cristal */
-    padding: 20px 16px 10px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.header-content {
+/* AÑADIDO: Para alinear logo y texto en la cabecera */
+.brand-container {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 10px; /* Espacio entre logo y texto */
 }
 
+.app-logo {
+    width: 32px;  /* Tamaño discreto */
+    height: 32px;
+    border-radius: 8px; /* Bordes redondeados como en iOS */
+    object-fit: cover;
+}
+
+/* Ajuste fino del H1 para que quede centrado con el logo */
 h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     margin: 0;
-    letter-spacing: -0.5px;
+    line-height: 1;
 }
-
-.refresh-btn {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 10px; /* Aumentar zona de toque */
-}
-
-/* --- PESTAÑAS (Estilo "Pills") --- */
-.tabs {
-    display: flex;
-    overflow-x: auto;
-    padding: 10px 16px;
-    background: #000;
-    position: sticky;
-    top: 60px;
-    z-index: 90;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-}
-
-.tabs::-webkit-scrollbar { display: none; }
-
-.tab-btn {
-    background: #2A2A2A;
-    border: none;
-    color: #fff;
-    padding: 8px 16px;
-    margin-right: 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-}
-
-.tab-btn.active {
-    background: #1DB954; /* Verde Spotify */
-    color: #000;
-}
-
-/* --- LISTA DE REPRODUCCIÓN (Canales) --- */
-#contenedor-eventos {
-    padding: 0 16px;
-}
-
-/* Cada Fila */
-.track-row {
-    display: flex;
-    align-items: center;
-    padding: 16px 0;
-    border-bottom: 1px solid #282828; /* Separador sutil */
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.track-row:active {
-    background-color: #1a1a1a; /* Feedback al pulsar */
-}
-
-/* El cuadro de icono a la izquierda (Album Art) */
-.track-icon-box {
-    width: 48px;
-    height: 48px;
-    background: #121212;
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-right: 16px;
-    font-size: 1.2rem;
-    color: #B3B3B3;
-}
-
-/* Info Central */
-.track-info {
-    flex: 1;
-    overflow: hidden;
-}
-
-.track-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 4px;
-}
-
-.track-meta {
-    font-size: 0.8rem;
-    color: #B3B3B3; /* Gris Spotify */
-}
-
-/* Estado COPIADO (Verde) */
-.track-row.copied .track-title {
-    color: #1DB954;
-}
-
-.track-row.copied .track-icon-box {
-    background: #1DB954;
-    color: #000;
-}
-
-/* --- LOADER --- */
-.loader-container {
-    text-align: center;
-    padding: 40px;
-    display: none;
-}
-.loader-text {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #333; /* Oscuro hasta que carga */
-    background: linear-gradient(90deg, #333 0%, #fff 50%, #333 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 2s linear infinite;
-}
-
-@keyframes shine { to { background-position: 200% center; } }
