@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,7 +27,7 @@
         <div class="search-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Buscar canal o partido..." onkeyup="filtrarBusqueda()">
+                <input type="text" id="searchInput" placeholder="Buscar partido o canal..." onkeyup="filtrarBusqueda()">
             </div>
         </div>
     </header>
@@ -42,7 +41,7 @@
     <main id="contenedor-eventos"></main>
 
     <script>
-        // PEGA TU URL DE GOOGLE APPS SCRIPT AQUÍ
+        // REEMPLAZA CON TU URL DE APPS SCRIPT
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
@@ -61,10 +60,10 @@
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
-                    porcentaje += Math.floor(Math.random() * 8) + 1;
+                    porcentaje += Math.floor(Math.random() * 5) + 1;
                     loaderText.innerText = porcentaje + '%';
                 }
-            }, 400);
+            }, 300);
 
             try {
                 const response = await fetch(API_URL);
@@ -79,7 +78,7 @@
                 }, 300);
             } catch (error) {
                 clearInterval(intervalo);
-                loaderText.innerText = 'Error';
+                loaderText.innerText = 'Error de conexión';
             }
         }
 
@@ -111,19 +110,18 @@
             });
         }
 
-        function renderizar(lista, esBusqueda = false) {
+        function renderizar(lista) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
             if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales activos ahora.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No se han encontrado canales.</p>`;
                 return;
             }
             lista.forEach(item => {
                 let icono = 'fa-tv';
                 const txt = (item.titulo + item.categoria).toUpperCase();
-                if (txt.includes('FÚTBOL') || txt.includes('SOCCER')) icono = 'fa-futbol';
-                else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car';
-                else if (txt.includes('NBA')) icono = 'fa-basketball';
+                if (txt.includes('FÚTBOL') || txt.includes('PIMPLE')) icono = 'fa-futbol';
+                else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
@@ -132,7 +130,7 @@
                     <div class="track-icon-box"><i class="fa-solid ${icono}"></i></div>
                     <div class="track-info">
                         <div class="track-title">${item.titulo}</div>
-                        <div class="track-meta">${item.origen} • Toca para copiar</div>
+                        <div class="track-meta">${item.origen} • ID: ${item.id.substring(0,6)}...</div>
                     </div>
                     <div class="action-icon"><i class="fa-regular fa-copy"></i></div>
                 `;
@@ -151,7 +149,7 @@
         function filtrarBusqueda() {
             const texto = document.getElementById('searchInput').value.toLowerCase();
             if (texto.length > 0) {
-                renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)), true);
+                renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)));
             } else {
                 renderizar(categoriaActual === 'TODAS' ? todosLosDatos : todosLosDatos.filter(i => i.categoria === categoriaActual));
             }
@@ -162,7 +160,10 @@
             navigator.clipboard.writeText(texto).then(() => {
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
                 elementoFila.classList.add('copied');
-                elementoFila.querySelector('.track-meta').innerText = "¡COPIADO!";
+                const meta = elementoFila.querySelector('.track-meta');
+                const original = meta.innerText;
+                meta.innerText = "¡ID COPIADO AL PORTAPAPELES!";
+                setTimeout(() => meta.innerText = original, 2000);
             });
         }
 
