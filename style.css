@@ -1,17 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
+/* --- BASE --- */
 body {
     background-color: #000000;
     color: #FFFFFF;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     margin: 0;
-    padding-bottom: 80px;
+    padding-bottom: 90px;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
 }
 
+/* --- HEADER & BLUR --- */
 header {
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -22,42 +26,194 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 16px 5px 16px;
+    padding: 16px 16px 8px 16px;
 }
 
-.brand-container { display: flex; align-items: center; gap: 12px; }
-.app-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
-h1 { font-size: 1.3rem; font-weight: 700; margin: 0; }
-.refresh-btn { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
-.search-container { padding: 10px 16px 15px 16px; }
-.search-wrapper { position: relative; }
-.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; }
+.app-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.refresh-btn {
+    background: none;
+    border: none;
+    color: #FFFFFF;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    transition: transform 0.2s active;
+}
+
+.refresh-btn:active {
+    transform: rotate(180deg);
+}
+
+/* --- SEARCH (iOS Style) --- */
+.search-container {
+    padding: 8px 16px 16px 16px;
+}
+
+.search-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8e8e93;
+    font-size: 0.9rem;
+}
+
 #searchInput {
-    width: 100%; background-color: #1c1c1e; border: none; border-radius: 10px;
-    padding: 10px 10px 10px 36px; color: #fff; font-size: 1rem; outline: none; box-sizing: border-box;
+    width: 100%;
+    background-color: #1c1c1e;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 12px 12px 40px;
+    color: #FFFFFF;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    box-sizing: border-box;
 }
 
+#searchInput::placeholder {
+    color: #48484a;
+}
+
+/* --- TABS (Scrollable Chips) --- */
 .tabs {
-    display: flex; overflow-x: auto; padding: 12px 16px; background: #000;
-    position: sticky; top: 112px; z-index: 90; scrollbar-width: none; border-bottom: 1px solid #1a1a1a;
+    display: flex;
+    overflow-x: auto;
+    padding: 12px 16px;
+    background: #000000;
+    position: sticky;
+    top: 118px; /* Header + Search */
+    z-index: 90;
+    scrollbar-width: none;
+    border-bottom: 1px solid #1a1a1a;
 }
+
 .tabs::-webkit-scrollbar { display: none; }
+
 .tab-btn {
-    background: #1F1F1F; border: 1px solid #333; color: #fff; padding: 8px 18px;
-    margin-right: 8px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; white-space: nowrap;
+    background: #282828;
+    border: none;
+    color: #FFFFFF;
+    padding: 8px 20px;
+    margin-right: 8px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s ease;
 }
-.tab-btn.active { background: #1DB954; border-color: #1DB954; color: #000; }
 
-#contenedor-eventos { padding: 0 16px; }
-.track-row { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid #1a1a1a; }
-.track-icon-box { width: 42px; height: 42px; background: #121212; border-radius: 6px; display: flex; justify-content: center; align-items: center; margin-right: 16px; color: #B3B3B3; }
-.track-info { flex: 1; overflow: hidden; }
-.track-title { font-size: 0.95rem; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-.track-meta { font-size: 0.75rem; color: #888; }
+.tab-btn.active {
+    background: #1DB954;
+    color: #000000;
+}
+
+/* --- LISTA DE CANALES --- */
+#contenedor-eventos {
+    padding: 8px 16px;
+}
+
+.track-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #121212;
+    cursor: pointer;
+}
+
+.track-row:active {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+}
+
+.track-icon-box {
+    width: 48px;
+    height: 48px;
+    background: #181818;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 16px;
+    font-size: 1.2rem;
+    color: #b3b3b3;
+    flex-shrink: 0;
+}
+
+.track-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.track-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track-meta {
+    font-size: 0.8rem;
+    color: #b3b3b3;
+}
+
+.action-icon {
+    color: #b3b3b3;
+    padding-left: 10px;
+    font-size: 1rem;
+}
+
+/* --- ESTADOS ESPECIALES --- */
 .track-row.copied .track-title { color: #1DB954; }
-.track-row.copied .track-icon-box { background: #1DB954; color: #000; }
+.track-row.copied .track-icon-box { background: #1DB954; color: #000000; }
+.track-row.copied .action-icon { color: #1DB954; }
 
-.loader-container { text-align: center; padding: 40px; display: none; }
-.loader-text { font-size: 1.5rem; font-weight: 700; background: linear-gradient(90deg, #333 0%, #fff 50%, #333 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 2s linear infinite; }
-@keyframes shine { to { background-position: 200% center; } }
+/* --- LOADER --- */
+.loader-container {
+    text-align: center;
+    padding: 60px 20px;
+    display: none;
+}
+
+.loader-text {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(90deg, #121212, #fff, #121212);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 2s linear infinite;
+}
+
+@keyframes shine {
+    to { background-position: 200% center; }
+}
