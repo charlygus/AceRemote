@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <title>AceRemote</title>
     
     <link rel="icon" type="image/png" href="icon.png">
@@ -24,8 +25,14 @@
 
     <header>
         <div class="header-content">
-            <h1>AceRemote</h1>
-            <button onclick="iniciarCarga()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <div class="brand-container">
+                <img src="icon.png" alt="Logo" class="app-logo">
+                <h1>AceRemote</h1>
+            </div>
+            
+            <button onclick="iniciarCarga()" class="refresh-btn">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
         </div>
     </header>
 
@@ -57,7 +64,7 @@
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
             
-            // Animación de números (Fake loader)
+            // Animación de números
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
@@ -92,7 +99,6 @@
             const tabsContainer = document.getElementById('tabs-container');
             const categoriasUnicas = [...new Set(datos.map(item => item.categoria))].sort();
 
-            // Botón "Todo"
             const btnTodas = document.createElement('button');
             btnTodas.className = 'tab-btn active';
             btnTodas.innerText = 'Todo';
@@ -120,7 +126,6 @@
             }
 
             lista.forEach(item => {
-                // Seleccionar icono basado en el título o categoría
                 let icono = 'fa-tv';
                 const textoCompleto = (item.titulo + item.categoria).toUpperCase();
                 if (textoCompleto.includes('FÚTBOL') || textoCompleto.includes('SOCCER')) icono = 'fa-futbol';
@@ -130,7 +135,6 @@
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
-                // Al hacer click en CUALQUIER PARTE de la fila, se copia
                 row.onclick = function() { copiarID(item.id, this); };
                 
                 row.innerHTML = `
@@ -152,8 +156,6 @@
         function filtrar(categoria, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            // Scroll suave del botón al centro si es necesario
             btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
             if (categoria === 'TODAS') {
@@ -164,13 +166,8 @@
         }
 
         function copiarID(texto, elementoFila) {
-            // 1. Vibración (Haptic Feedback) si el móvil lo soporta
             if (navigator.vibrate) navigator.vibrate(50);
-
-            // 2. Copiar al portapapeles
             navigator.clipboard.writeText(texto).then(() => {
-                
-                // 3. Transformación Visual (La magia)
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
                 elementoFila.classList.add('copied');
                 
@@ -178,7 +175,6 @@
                 const iconBox = elementoFila.querySelector('.track-icon-box');
                 const iconAction = elementoFila.querySelector('.action-icon');
 
-                // Feedback inmediato
                 meta.innerText = "¡ID COPIADO LISTO PARA PEGAR!";
                 iconBox.innerHTML = '<i class="fa-solid fa-check"></i>';
                 iconAction.innerHTML = '<i class="fa-solid fa-check" style="color:#1DB954;"></i>';
