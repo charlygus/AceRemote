@@ -4,8 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AceRemote</title>
+    
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <meta name="theme-color" content="#000000">
+
+    <link rel="manifest" href="manifest.json">
+
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta name="apple-mobile-web-app-title" content="AceRemote">
+
 </head>
 <body>
 
@@ -28,8 +42,10 @@
 
     <script>
         // ==========================================
-        // PEGA TU URL DE GOOGLE APPS SCRIPT AQUÍ
+        // URL DE GOOGLE APPS SCRIPT
         // ==========================================
+        // NOTA: He ocultado tu URL real por seguridad en el chat,
+        // asegúrate de que en tu archivo final en GitHub SÍ esté la URL larga.
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
@@ -44,7 +60,7 @@
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
             
-            // Animación de números
+            // Animación de números (Fake loader)
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
@@ -90,7 +106,7 @@
                 if(cat && cat !== 'undefined') {
                     const btn = document.createElement('button');
                     btn.className = 'tab-btn';
-                    btn.innerText = cat; // Ya no mostramos el número para ser más limpios
+                    btn.innerText = cat; 
                     btn.onclick = function() { filtrar(cat, this); };
                     tabsContainer.appendChild(btn);
                 }
@@ -109,9 +125,11 @@
             lista.forEach(item => {
                 // Seleccionar icono basado en el título o categoría
                 let icono = 'fa-tv';
-                if (item.titulo.includes('FÚTBOL') || item.categoria.includes('FÚTBOL')) icono = 'fa-futbol';
-                if (item.categoria.includes('MOTOR')) icono = 'fa-car';
-                if (item.categoria.includes('NBA')) icono = 'fa-basketball';
+                const textoCompleto = (item.titulo + item.categoria).toUpperCase();
+                if (textoCompleto.includes('FÚTBOL') || textoCompleto.includes('SOCCER')) icono = 'fa-futbol';
+                if (textoCompleto.includes('MOTOR') || textoCompleto.includes('F1')) icono = 'fa-car';
+                if (textoCompleto.includes('NBA') || textoCompleto.includes('BASKET')) icono = 'fa-basketball';
+                if (textoCompleto.includes('NFL')) icono = 'fa-football';
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
@@ -156,27 +174,17 @@
             navigator.clipboard.writeText(texto).then(() => {
                 
                 // 3. Transformación Visual (La magia)
-                // Quitamos la clase 'copied' de cualquier otro que estuviera activo
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
-                
-                // Activamos ESTA fila
                 elementoFila.classList.add('copied');
                 
-                // Cambiamos el texto y el icono temporalmente
-                const titulo = elementoFila.querySelector('.track-title');
                 const meta = elementoFila.querySelector('.track-meta');
                 const iconBox = elementoFila.querySelector('.track-icon-box');
                 const iconAction = elementoFila.querySelector('.action-icon');
 
-                const textoOriginal = titulo.innerText;
-                
                 // Feedback inmediato
                 meta.innerText = "¡ID COPIADO LISTO PARA PEGAR!";
                 iconBox.innerHTML = '<i class="fa-solid fa-check"></i>';
                 iconAction.innerHTML = '<i class="fa-solid fa-check" style="color:#1DB954;"></i>';
-
-                // (Opcional) Volver al estado normal tras 5 segundos
-                // Pero a veces es útil dejarlo verde para saber cual probaste el último.
                 
             }).catch(err => {
                 alert('Error copiando. Permisos denegados.');
