@@ -13,7 +13,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
-
     <header>
         <div class="header-content">
             <div class="brand-container">
@@ -33,15 +32,11 @@
     </header>
 
     <div id="tabs-container" class="tabs"></div>
-
-    <div id="loader" class="loader-container">
-        <div id="loader-text" class="loader-text">0%</div>
-    </div>
-    
+    <div id="loader" class="loader-container"><div id="loader-text" class="loader-text">0%</div></div>
     <main id="contenedor-eventos"></main>
 
     <script>
-        // REEMPLAZA CON TU URL DE APPS SCRIPT
+        // PEGA AQUÍ TU URL NUEVA SI CAMBIA, O MANTÉN LA ACTUAL
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
@@ -60,11 +55,11 @@
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
-                    porcentaje += Math.floor(Math.random() * 15) + 5;
+                    porcentaje += Math.floor(Math.random() * 10) + 5;
                     if(porcentaje > 99) porcentaje = 99;
                     loaderText.innerText = porcentaje + '%';
                 }
-            }, 100);
+            }, 150);
 
             try {
                 const response = await fetch(API_URL);
@@ -86,27 +81,20 @@
         function generarPestanas(datos) {
             const tabsContainer = document.getElementById('tabs-container');
             let categorias = [...new Set(datos.map(item => item.categoria))].sort();
-
             const btnTodas = document.createElement('button');
             btnTodas.className = 'tab-btn active';
             btnTodas.innerText = 'Todo';
             btnTodas.onclick = function() { filtrar('TODAS', this); };
             tabsContainer.appendChild(btnTodas);
 
-            // PRIORIDAD DE PESTAÑAS
-            // 1. Pimple TV siempre primero
+            // ORDEN: Pimple TV > Canales TV
             const pIdx = categorias.indexOf("PIMPLE TV");
-            if (pIdx !== -1) {
-                categorias.splice(pIdx, 1);
-                categorias.unshift("PIMPLE TV");
-            }
-            // 2. Canales TV segundo
+            if (pIdx !== -1) { categorias.splice(pIdx, 1); categorias.unshift("PIMPLE TV"); }
             const cIdx = categorias.indexOf("CANALES TV");
             if (cIdx !== -1) {
-                // Si Pimple está en la posición 0, ponemos Canales en la 1
-                const targetPos = categorias[0] === "PIMPLE TV" ? 1 : 0;
                 categorias.splice(categorias.indexOf("CANALES TV"), 1);
-                categorias.splice(targetPos, 0, "CANALES TV");
+                const target = categorias[0] === "PIMPLE TV" ? 1 : 0;
+                categorias.splice(target, 0, "CANALES TV");
             }
 
             categorias.forEach(cat => {
@@ -124,14 +112,15 @@
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
             if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay contenido disponible.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales disponibles.</p>`;
                 return;
             }
             lista.forEach(item => {
                 let icono = 'fa-tv';
                 const txt = (item.titulo + item.categoria).toUpperCase();
                 if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
-                else if (txt.includes('MOTOR') || txt.includes('F1') || txt.includes('MOTO')) icono = 'fa-car-side';
+                else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
+                else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
@@ -172,11 +161,10 @@
                 elementoFila.classList.add('copied');
                 const meta = elementoFila.querySelector('.track-meta');
                 const old = meta.innerText;
-                meta.innerText = "¡ID COPIADO!";
+                meta.innerText = "¡COPIADO!";
                 setTimeout(() => meta.innerText = old, 2000);
             });
         }
-
         iniciarCarga();
     </script>
 </body>
