@@ -4,6 +4,8 @@
 * {
     -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
     -webkit-tap-highlight-color: transparent; outline: none;
+    /* Intento de forzar reseteo de fondos en TV */
+    -webkit-background-clip: padding-box; 
 }
 input, textarea { -webkit-user-select: text; user-select: text; }
 
@@ -19,16 +21,27 @@ header {
 }
 
 .header-content { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 8px 16px; }
-.brand-container { display: flex; align-items: center; gap: 12px; }
 
-/* --- AQUÍ ESTÁ EL CAMBIO DEL LOGO --- */
+/* CAMBIO V35: Aseguramos que el contenedor tampoco tenga fondo */
+.brand-container { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+    background: transparent !important; 
+}
+
+/* --- CAMBIO V35 EN EL LOGO --- */
 .app-logo { 
     width: 32px; 
     height: 32px; 
     border-radius: 8px; 
-    object-fit: contain; /* Cambiado a contain para evitar estiramientos raros */
-    background-color: transparent !important; /* FORZAMOS TRANSPARENCIA */
-    box-shadow: none !important; /* QUITAMOS SOMBRAS POR DEFECTO */
+    /* VUELVE A COVER PARA QUE SE VEA GRANDE */
+    object-fit: cover; 
+    /* FUERZA BRUTA DE TRANSPARENCIA */
+    background-color: transparent !important;
+    background: none !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
 h1 { font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
