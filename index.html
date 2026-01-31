@@ -36,11 +36,12 @@
     <main id="contenedor-eventos"></main>
 
     <script>
-        // PEGA AQUÍ TU URL NUEVA SI CAMBIA, O MANTÉN LA ACTUAL
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
 
         let todosLosDatos = []; 
         let categoriaActual = 'TODAS';
+        // Detectar si es iOS (iPhone/iPad)
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         async function iniciarCarga() {
             const container = document.getElementById('contenedor-eventos');
@@ -87,7 +88,6 @@
             btnTodas.onclick = function() { filtrar('TODAS', this); };
             tabsContainer.appendChild(btnTodas);
 
-            // ORDEN: Pimple TV > Canales TV
             const pIdx = categorias.indexOf("PIMPLE TV");
             if (pIdx !== -1) { categorias.splice(pIdx, 1); categorias.unshift("PIMPLE TV"); }
             const cIdx = categorias.indexOf("CANALES TV");
@@ -122,16 +122,31 @@
                 else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
                 else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
 
+                // Generar botones de acción
+                let botonesAccion = '';
+                
+                // Si NO es iOS, mostramos botón Play
+                if (!isIOS) {
+                    botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
+                }
+                
+                // Botón Copiar (siempre visible)
+                botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
+
                 const row = document.createElement('div');
                 row.className = 'track-row';
-                row.onclick = function() { copiarID(item.id, this); };
+                // Si se hace click en la fila (no en botones), copiamos por defecto
+                row.onclick = function(e) { copiarID(item.id, this.querySelector('.copy-btn'), e); };
+                
                 row.innerHTML = `
                     <div class="track-icon-box"><i class="fa-solid ${icono}"></i></div>
                     <div class="track-info">
                         <div class="track-title">${item.titulo}</div>
-                        <div class="track-meta">${item.origen} • Toca para copiar</div>
+                        <div class="track-meta">${item.origen}</div>
                     </div>
-                    <div class="action-icon"><i class="fa-regular fa-copy"></i></div>
+                    <div class="actions-container">
+                        ${botonesAccion}
+                    </div>
                 `;
                 container.appendChild(row);
             });
@@ -154,17 +169,32 @@
             }
         }
 
-        function copiarID(texto, elementoFila) {
+        function copiarID(texto, btnElemento, evento) {
+            if (evento) evento.stopPropagation(); // Evita que el click se propague
             if (navigator.vibrate) navigator.vibrate(50);
+            
             navigator.clipboard.writeText(texto).then(() => {
+                // Buscamos la fila padre para ponerla verde
+                const fila = btnElemento.closest('.track-row');
+                
+                // Quitamos estado copiado de otros
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
-                elementoFila.classList.add('copied');
-                const meta = elementoFila.querySelector('.track-meta');
+                
+                fila.classList.add('copied');
+                
+                const meta = fila.querySelector('.track-meta');
                 const old = meta.innerText;
                 meta.innerText = "¡COPIADO!";
                 setTimeout(() => meta.innerText = old, 2000);
             });
         }
+
+        function abrirEnlace(id, evento) {
+            if (evento) evento.stopPropagation();
+            if (navigator.vibrate) navigator.vibrate(50);
+            window.location.href = 'acestream://' + id;
+        }
+
         iniciarCarga();
     </script>
 </body>
