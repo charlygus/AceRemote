@@ -1,23 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-/* --- REGLAS GLOBALES ANTI-CURSOR --- */
+/* BLOQUEO DE SELECCIÓN GLOBAL */
 * {
-    -webkit-user-select: none; /* Safari / Chrome */
-    -moz-user-select: none;    /* Firefox */
-    -ms-user-select: none;     /* IE */
-    user-select: none;         /* Estándar */
-    -webkit-tap-highlight-color: transparent; /* Quita el destello azul al tocar */
-    outline: none; /* Quita bordes de selección */
+    -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent; outline: none;
 }
-
-/* Reactivamos la escritura SOLO en el buscador */
-input, textarea {
-    -webkit-user-select: text;
-    user-select: text;
-}
+input, textarea { -webkit-user-select: text; user-select: text; }
 
 body { background-color: #000000; color: #FFFFFF; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
-header { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #1a1a1a; }
+
+/* --- HEADER OPTIMIZADO PARA TV (SIN BLUR PESADO) --- */
+header {
+    /* Usamos un fondo casi opaco para que sea ligero de procesar */
+    background: rgba(15, 15, 15, 0.98); 
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid #1a1a1a;
+    /* Eliminados los backdrop-filter que causaban lag en TV */
+}
+
 .header-content { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 8px 16px; }
 .brand-container { display: flex; align-items: center; gap: 12px; }
 .app-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
@@ -34,7 +36,7 @@ h1 { font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
 #contenedor-eventos { padding: 8px 16px; }
 .track-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #121212; cursor: pointer; }
 
-/* LOGOS Y ESTILOS */
+/* ICONOS Y ESCUDOS */
 .track-icon-box { width: 56px; height: 56px; background: #181818; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-right: 16px; font-size: 1.2rem; color: #b3b3b3; flex-shrink: 0; overflow: hidden; position: relative; }
 .team-logos { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; gap: 4px; }
 .logo-circle { width: 24px; height: 24px; background: #fff; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
@@ -56,9 +58,12 @@ h1 { font-size: 1.4rem; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
 .action-icon { color: #b3b3b3; font-size: 1.2rem; padding: 8px; transition: color 0.2s; cursor: pointer; }
 .play-btn:hover { color: #1DB954; transform: scale(1.1); }
 .copy-btn:hover { color: #fff; }
+
+/* --- ESTADO COPIADO (CORREGIDO DEFINITIVAMENTE) --- */
 .track-row.copied .track-title { color: #1DB954; }
-.track-row.copied .track-icon-box { border: 1px solid #1DB954; }
 .track-row.copied .copy-btn { color: #1DB954; }
+/* ELIMINADA LA REGLA QUE PONÍA BORDE AL track-icon-box */
+
 .loader-container { text-align: center; padding: 60px 20px; display: none; }
 .loader-text { font-size: 2rem; font-weight: 800; background: linear-gradient(90deg, #121212, #fff, #121212); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 2s linear infinite; }
 @keyframes shine { to { background-position: 200% center; } }
