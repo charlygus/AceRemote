@@ -37,10 +37,9 @@
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
-
+        
         let todosLosDatos = []; 
         let categoriaActual = 'TODAS';
-        // Detectar si es iOS (iPhone/iPad)
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         async function iniciarCarga() {
@@ -116,30 +115,40 @@
                 return;
             }
             lista.forEach(item => {
-                let icono = 'fa-tv';
-                const txt = (item.titulo + item.categoria).toUpperCase();
-                if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
-                else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
-                else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
+                // Generar Icono o Logos
+                let contenidoIcono = '';
+                if (item.logo1 && item.logo2) {
+                    // Si tenemos escudos
+                    contenidoIcono = `
+                        <div class="team-logos">
+                            <img src="${item.logo1}" alt="L">
+                            <img src="${item.logo2}" alt="V">
+                        </div>
+                    `;
+                } else {
+                    // Icono por defecto
+                    let icono = 'fa-tv';
+                    const txt = (item.titulo + item.categoria).toUpperCase();
+                    if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
+                    else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
+                    else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
+                    contenidoIcono = `<i class="fa-solid ${icono}"></i>`;
+                }
 
-                // Generar botones de acción
                 let botonesAccion = '';
-                
-                // Si NO es iOS, mostramos botón Play
                 if (!isIOS) {
                     botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
                 }
-                
-                // Botón Copiar (siempre visible)
                 botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
-                // Si se hace click en la fila (no en botones), copiamos por defecto
                 row.onclick = function(e) { copiarID(item.id, this.querySelector('.copy-btn'), e); };
                 
                 row.innerHTML = `
-                    <div class="track-icon-box"><i class="fa-solid ${icono}"></i></div>
+                    <div class="track-icon-box">
+                        ${contenidoIcono}
+                    </div>
                     <div class="track-info">
                         <div class="track-title">${item.titulo}</div>
                         <div class="track-meta">${item.origen}</div>
@@ -170,18 +179,12 @@
         }
 
         function copiarID(texto, btnElemento, evento) {
-            if (evento) evento.stopPropagation(); // Evita que el click se propague
+            if (evento) evento.stopPropagation();
             if (navigator.vibrate) navigator.vibrate(50);
-            
             navigator.clipboard.writeText(texto).then(() => {
-                // Buscamos la fila padre para ponerla verde
                 const fila = btnElemento.closest('.track-row');
-                
-                // Quitamos estado copiado de otros
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
-                
                 fila.classList.add('copied');
-                
                 const meta = fila.querySelector('.track-meta');
                 const old = meta.innerText;
                 meta.innerText = "¡COPIADO!";
@@ -194,7 +197,6 @@
             if (navigator.vibrate) navigator.vibrate(50);
             window.location.href = 'acestream://' + id;
         }
-
         iniciarCarga();
     </script>
 </body>
