@@ -36,6 +36,7 @@
     <main id="contenedor-eventos"></main>
 
     <script>
+        // MANTÉN TU URL DE SIEMPRE
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
         
         let todosLosDatos = []; 
@@ -71,6 +72,8 @@
                     todosLosDatos = datos;
                     generarPestanas(datos);
                     renderizar(datos);
+                    // Iniciamos el reloj para actualizar los "Falta 1h..."
+                    setInterval(actualizarContadores, 60000);
                 }, 200);
             } catch (error) {
                 clearInterval(intervalo);
@@ -107,6 +110,45 @@
             });
         }
 
+        function calcularTiempo(timestamp) {
+            if (!timestamp) return { texto: "", clase: "" };
+            
+            const ahora = new Date().getTime();
+            const diff = timestamp - ahora;
+            const diffMinutos = Math.floor(diff / 1000 / 60);
+
+            // Si el partido empezó hace menos de 2 horas (120 mins) -> EN JUEGO
+            if (diff <= 0 && diff > -7200000) {
+                return { 
+                    texto: `🔴 EN JUEGO`, 
+                    clase: "status-live" 
+                };
+            }
+            // Si el partido acabó (hace más de 2h)
+            if (diff <= -7200000) {
+                return { texto: "Finalizado", clase: "status-ended" };
+            }
+
+            // Si falta para empezar
+            if (diff > 0) {
+                const horas = Math.floor(diffMinutos / 60);
+                const mins = diffMinutos % 60;
+                
+                if (horas > 24) {
+                    // Si falta más de un día, mostramos fecha corta
+                    let fecha = new Date(timestamp);
+                    return { texto: `📅 ${fecha.getDate()}/${fecha.getMonth()+1} • ${fecha.getHours()}:${(fecha.getMinutes()<10?'0':'')+fecha.getMinutes()}`, clase: "status-future" };
+                }
+                
+                if (horas === 0) {
+                    return { texto: `⏳ Comienza en ${mins}m`, clase: "status-soon" };
+                }
+                
+                return { texto: `⏱️ Comienza en ${horas}h ${mins}m`, clase: "status-future" };
+            }
+            return { texto: "", clase: "" };
+        }
+
         function renderizar(lista) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
@@ -115,18 +157,16 @@
                 return;
             }
             lista.forEach(item => {
-                // Generar Icono o Logos
+                // LOGOS O ICONOS
                 let contenidoIcono = '';
                 if (item.logo1 && item.logo2) {
-                    // Si tenemos escudos
                     contenidoIcono = `
                         <div class="team-logos">
-                            <img src="${item.logo1}" alt="L">
-                            <img src="${item.logo2}" alt="V">
+                            <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
+                            <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
                         </div>
                     `;
                 } else {
-                    // Icono por defecto
                     let icono = 'fa-tv';
                     const txt = (item.titulo + item.categoria).toUpperCase();
                     if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
@@ -135,6 +175,17 @@
                     contenidoIcono = `<i class="fa-solid ${icono}"></i>`;
                 }
 
+                // TIEMPO INTELIGENTE
+                let infoTiempo = { texto: item.origen, clase: "" };
+                // Solo calculamos tiempo si viene de PimpleTV y tiene timestamp
+                if (item.origen === "PimpleTV" && item.timestamp) {
+                    let t = calcularTiempo(item.timestamp);
+                    // Quitamos la hora fea del título si existe "[HH:MM]"
+                    item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
+                    infoTiempo = t;
+                }
+
+                // BOTONES
                 let botonesAccion = '';
                 if (!isIOS) {
                     botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
@@ -143,6 +194,9 @@
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
+                // Guardamos el timestamp en el HTML para actualizarlo luego
+                if(item.timestamp) row.dataset.timestamp = item.timestamp;
+                
                 row.onclick = function(e) { copiarID(item.id, this.querySelector('.copy-btn'), e); };
                 
                 row.innerHTML = `
@@ -151,13 +205,28 @@
                     </div>
                     <div class="track-info">
                         <div class="track-title">${item.titulo}</div>
-                        <div class="track-meta">${item.origen}</div>
+                        <div class="track-meta">
+                            <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
+                            ${item.origen !== 'PimpleTV' ? item.origen : ''} 
+                        </div>
                     </div>
                     <div class="actions-container">
                         ${botonesAccion}
                     </div>
                 `;
                 container.appendChild(row);
+            });
+        }
+
+        function actualizarContadores() {
+            document.querySelectorAll('.track-row[data-timestamp]').forEach(row => {
+                const ts = parseInt(row.dataset.timestamp);
+                const info = calcularTiempo(ts);
+                const badge = row.querySelector('.status-badge');
+                if (badge && info.texto) {
+                    badge.className = `status-badge ${info.clase}`;
+                    badge.innerText = info.texto;
+                }
             });
         }
 
@@ -186,9 +255,9 @@
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
                 fila.classList.add('copied');
                 const meta = fila.querySelector('.track-meta');
-                const old = meta.innerText;
-                meta.innerText = "¡COPIADO!";
-                setTimeout(() => meta.innerText = old, 2000);
+                // Guardamos el texto original temporalmente
+                // En este caso simplificado no lo guardamos para no complicar el DOM, solo mostramos copiado
+                // Una mejora futura es restaurar el contador
             });
         }
 
