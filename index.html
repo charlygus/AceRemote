@@ -1,244 +1,204 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AceRemote</title>
-    
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
-    
-    <link rel="stylesheet" href="style.css?v=35">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-</head>
-<body>
-    <header>
-        <div class="header-content">
-            <div class="brand-container">
-                <img src="icon.png" alt="Logo" class="app-logo">
-                <h1>AceRemote</h1>
-            </div>
-            <button onclick="iniciarCarga()" class="refresh-btn">
-                <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
-        </div>
-        <div class="search-container">
-            <div class="search-wrapper">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Buscar canal o partido..." onkeyup="filtrarBusqueda()">
-            </div>
-        </div>
-    </header>
+function doGet() {
+  let resultadosPimple = [];
+  let resultadosAce = [];
+  let resultadosPlatin = []; // <--- NUEVO ARRAY PARA PLATIN
+  let combinacionesVistas = new Set(); 
+  
+  const parametros = {
+    'method': 'get',
+    'followRedirects': true,
+    'muteHttpExceptions': true,
+    'headers': {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+  };
 
-    <div id="tabs-container" class="tabs"></div>
-    <div id="loader" class="loader-container"><div id="loader-text" class="loader-text">0%</div></div>
-    <main id="contenedor-eventos"></main>
-
-    <script>
-        // MANTÉN TU URL DE GOOGLE APPS SCRIPT AQUÍ
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
+  // --- 1. PIMPLE TV (CÓDIGO ORIGINAL INTACTO) ---
+  try {
+    const htmlPimple = UrlFetchApp.fetch('https://www.pimpletv.ru/', parametros).getContentText();
+    const regexLinks = /href="([^"]*?\/football\/[^"]*?)"/gi;
+    let match;
+    let linksPartidos = [];
+    
+    while ((match = regexLinks.exec(htmlPimple)) !== null) {
+      let url = match[1];
+      if (!url.startsWith('http')) url = 'https://www.pimpletv.ru' + (url.startsWith('/') ? '' : '/') + url;
+      linksPartidos.push(url);
+    }
+    
+    [...new Set(linksPartidos)].slice(0, 15).forEach(link => {
+      try {
+        const htmlInterior = UrlFetchApp.fetch(link, parametros).getContentText();
         
-        let todosLosDatos = []; 
-        let categoriaActual = 'TODAS';
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        // 1. FECHA Y HORA
+        let fechaObj = new Date();
+        let horaTexto = "";
+        let matchFecha = htmlInterior.match(/itemprop="startDate"\s+content="([^"]+)"/);
+        if (matchFecha) {
+            fechaObj = new Date(matchFecha[1]);
+            horaTexto = fechaObj.toLocaleTimeString('es-ES', {timeZone: 'Europe/Madrid', hour: '2-digit', minute:'2-digit'});
+        }
 
-        async function iniciarCarga() {
-            const container = document.getElementById('contenedor-eventos');
-            const tabsContainer = document.getElementById('tabs-container');
-            const loader = document.getElementById('loader');
-            const loaderText = document.getElementById('loader-text');
+        // 2. EXTRAER ESCUDOS Y NOMBRES DE ARCHIVO
+        // La estrategia: El nombre del archivo suele ser el nombre del equipo en latino
+        // Ejemplo: /uploads/.../pisa.png -> PISA
+        let logos = [];
+        let nombresEquipos = [];
+        
+        const regexLogos = /class="match-info__team-logo"><img\s+src="([^"]+)"/g;
+        let mLogo;
+        while((mLogo = regexLogos.exec(htmlInterior)) !== null) {
+            let rutaImagen = mLogo[1];
+            logos.push('https://www.pimpletv.ru' + rutaImagen);
             
-            container.innerHTML = ''; 
-            tabsContainer.innerHTML = '';
-            loader.style.display = 'block';
+            // INTELIGENCIA DE NOMBRES:
+            // Cogemos "pisa.png", quitamos extensión y guiones
+            let nombreArchivo = rutaImagen.split('/').pop().split('.')[0]; // "pisa"
+            nombreArchivo = nombreArchivo.replace(/-/g, ' ').replace(/_/g, ' '); // Quitar guiones
+            nombresEquipos.push(nombreArchivo.toUpperCase());
+        }
+        
+        let logo1 = logos[0] || null;
+        let logo2 = logos[1] || null;
+
+        // 3. CONSTRUIR TÍTULO "Vs"
+        let tituloPartido = "";
+        if (nombresEquipos.length >= 2) {
+            // Estrategia A: Nombres desde los archivos de imagen
+            tituloPartido = `${nombresEquipos[0]} Vs ${nombresEquipos[1]}`;
+        } else {
+            // Estrategia B (Fallback): Desde la URL del partido
+            // Ejemplo: .../123-pisa-vs-sassuolo/
+            let urlSlug = link.split('/').filter(Boolean).pop();
+            // Intentamos limpiar la URL
+            urlSlug = urlSlug.replace(/^\d+-/, ''); // Quitar números iniciales
+            urlSlug = urlSlug.replace(/-/g, ' ');   // Quitar guiones
+            urlSlug = urlSlug.replace(/\bvs\b/i, ' Vs '); // Poner Vs bonito
+            tituloPartido = urlSlug.toUpperCase();
+        }
+
+        // 4. EXTRAER IDS
+        const regexAce = /acestream:\/\/([0-9a-f]{40})/gi;
+        let matchAce;
+        let urlBase = link.split('/').filter(Boolean).pop(); 
+        let tituloFinal = horaTexto ? `[${horaTexto}] ${tituloPartido}` : tituloPartido;
+
+        while ((matchAce = regexAce.exec(htmlInterior)) !== null) {
+          let id = matchAce[1];
+          let firmaUnica = id + "|" + urlBase;
+          
+          if (!combinacionesVistas.has(firmaUnica)) {
+            resultadosPimple.push({ 
+              id: id, 
+              categoria: "PIMPLE TV", 
+              titulo: tituloFinal, 
+              origen: "PimpleTV",
+              timestamp: fechaObj.getTime(),
+              logo1: logo1,
+              logo2: logo2
+            });
+            combinacionesVistas.add(firmaUnica);
+          }
+        }
+      } catch(e) {}
+    });
+
+    resultadosPimple.sort((a, b) => a.timestamp - b.timestamp);
+
+  } catch(e) {}
+
+  // --- 2. ACESTREAMID (CÓDIGO ORIGINAL INTACTO) ---
+  try {
+    const htmlAce = UrlFetchApp.fetch('https://acestreamid.com/', parametros).getContentText();
+    const regexEstructura = /class="[^"]*col_title"[\s\S]*?title="([^"]+)"[\s\S]*?class="[^"]*col_id"[\s\S]*?acestream:\/\/([0-9a-f]{40})/gi;
+    let m;
+    let canalesVistos = new Set();
+    while ((m = regexEstructura.exec(htmlAce)) !== null) {
+      let nombreCanal = m[1].trim();
+      let idCanal = m[2];
+      if (!canalesVistos.has(idCanal)) {
+        resultadosAce.push({ id: idCanal, categoria: "CANALES TV", titulo: nombreCanal, origen: "AceStreamID" });
+        canalesVistos.add(idCanal);
+      }
+    }
+  } catch(e) {}
+
+  // --- 3. PLATINSPORT (NUEVA IMPLEMENTACIÓN) ---
+  try {
+    // A. Detectar URL dinámica (busca link/source-list.php)
+    const htmlHome = UrlFetchApp.fetch('https://platinsport.com/', parametros).getContentText();
+    const regexListUrl = /href="([^"]*?link\/source-list\.php[^"]*?)"/;
+    const matchUrl = htmlHome.match(regexListUrl);
+
+    if (matchUrl) {
+      let listUrl = matchUrl[1];
+      if (!listUrl.startsWith('http')) listUrl = 'https://platinsport.com' + (listUrl.startsWith('/') ? '' : '/') + listUrl;
+
+      const htmlList = UrlFetchApp.fetch(listUrl, parametros).getContentText();
+      
+      // B. Separar por partidos (match-title-bar inicia cada bloque)
+      // Usamos el split para aislar cada evento
+      const bloques = htmlList.split('class="match-title-bar"');
+
+      // Empezamos en 1 porque el 0 es basura antes del primer partido
+      for (let i = 1; i < bloques.length; i++) {
+        let bloque = bloques[i];
+        
+        try {
+          // Extraer fecha y titulo
+          // Regex busca: > <time ... datetime="..."> ... </div>
+          const regexInfo = />\s*<time[^>]*datetime="([^"]+)"[^>]*><\/time>\s*(.*?)\s*<\/div>/;
+          const matchInfo = bloque.match(regexInfo);
+
+          if (matchInfo) {
+            let fechaRaw = matchInfo[1]; // 2026-02-09T...
+            let tituloRaw = matchInfo[2].trim(); // Equipo A vs Equipo B
             
-            let porcentaje = 0;
-            let intervalo = setInterval(() => {
-                if (porcentaje < 98) {
-                    porcentaje += Math.floor(Math.random() * 10) + 5;
-                    if(porcentaje > 99) porcentaje = 99;
-                    loaderText.innerText = porcentaje + '%';
-                }
-            }, 150);
+            // Convertir hora a España
+            let fechaObj = new Date(fechaRaw);
+            let horaTexto = fechaObj.toLocaleTimeString('es-ES', {timeZone: 'Europe/Madrid', hour: '2-digit', minute:'2-digit'});
+            let tituloFinal = `[${horaTexto}] ${tituloRaw.toUpperCase()}`;
 
-            try {
-                const response = await fetch(API_URL);
-                const datos = await response.json();
-                clearInterval(intervalo);
-                loaderText.innerText = '100%';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    todosLosDatos = datos;
-                    generarPestanas(datos);
-                    renderizar(datos);
-                    setInterval(actualizarContadores, 60000);
-                }, 200);
-            } catch (error) {
-                clearInterval(intervalo);
-                loaderText.innerText = 'Error';
-            }
-        }
+            // Buscar zona de botones
+            const regexButtons = /class="button-group">([\s\S]*?)<\/div>/;
+            const matchButtons = bloque.match(regexButtons);
 
-        function generarPestanas(datos) {
-            const tabsContainer = document.getElementById('tabs-container');
-            let categorias = [...new Set(datos.map(item => item.categoria))].sort();
-            const btnTodas = document.createElement('button');
-            btnTodas.className = 'tab-btn active';
-            btnTodas.innerText = 'Todo';
-            btnTodas.onclick = function() { filtrar('TODAS', this); };
-            tabsContainer.appendChild(btnTodas);
+            if (matchButtons) {
+              let htmlBotones = matchButtons[1];
+              
+              // Regex para sacar ID y Pais
+              // Busca: href="acestream://..." ... class="fi fi-es" ... > NOMBRE </a>
+              const regexLink = /href="(acestream:\/\/[a-f0-9]{40})"[^>]*>[\s\S]*?class="fi fi-([a-z]+)"[\s\S]*?>([\s\S]*?)<\/a>/gi;
+              
+              let mLink;
+              let contadoresPais = {}; // Contador reiniciable por partido
 
-            const pIdx = categorias.indexOf("PIMPLE TV");
-            if (pIdx !== -1) { categorias.splice(pIdx, 1); categorias.unshift("PIMPLE TV"); }
-            const cIdx = categorias.indexOf("CANALES TV");
-            if (cIdx !== -1) {
-                categorias.splice(categorias.indexOf("CANALES TV"), 1);
-                const target = categorias[0] === "PIMPLE TV" ? 1 : 0;
-                categorias.splice(target, 0, "CANALES TV");
-            }
-
-            categorias.forEach(cat => {
-                if(cat) {
-                    const btn = document.createElement('button');
-                    btn.className = 'tab-btn';
-                    btn.innerText = cat; 
-                    btn.onclick = function() { filtrar(cat, this); };
-                    tabsContainer.appendChild(btn);
-                }
-            });
-        }
-
-        function calcularTiempo(timestamp) {
-            if (!timestamp) return { texto: "", clase: "" };
-            const ahora = new Date().getTime();
-            const diff = timestamp - ahora;
-            const diffMinutos = Math.floor(diff / 1000 / 60);
-
-            if (diff <= 0 && diff > -7200000) return { texto: `🔴 EN JUEGO`, clase: "status-live" };
-            if (diff <= -7200000) return { texto: "Finalizado", clase: "status-ended" };
-
-            if (diff > 0) {
-                const horas = Math.floor(diffMinutos / 60);
-                const mins = diffMinutos % 60;
-                if (horas > 24) {
-                    let fecha = new Date(timestamp);
-                    return { texto: `📅 ${fecha.getDate()}/${fecha.getMonth()+1} • ${fecha.getHours()}:${(fecha.getMinutes()<10?'0':'')+fecha.getMinutes()}`, clase: "status-future" };
-                }
-                if (horas === 0) return { texto: `⏳ Comienza en ${mins}m`, clase: "status-soon" };
-                return { texto: `⏱️ Comienza en ${horas}h ${mins}m`, clase: "status-future" };
-            }
-            return { texto: "", clase: "" };
-        }
-
-        function renderizar(lista) {
-            const container = document.getElementById('contenedor-eventos');
-            container.innerHTML = '';
-            if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales disponibles.</p>`;
-                return;
-            }
-            lista.forEach(item => {
-                let contenidoIcono = '';
-                if (item.logo1 && item.logo2) {
-                    contenidoIcono = `
-                        <div class="team-logos">
-                            <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
-                            <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
-                        </div>
-                    `;
-                } else {
-                    let icono = 'fa-tv';
-                    const txt = (item.titulo + item.categoria).toUpperCase();
-                    if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
-                    else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
-                    else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
-                    contenidoIcono = `<i class="fa-solid ${icono}"></i>`;
-                }
-
-                let infoTiempo = { texto: item.origen, clase: "" };
-                if (item.origen === "PimpleTV" && item.timestamp) {
-                    let t = calcularTiempo(item.timestamp);
-                    item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
-                    infoTiempo = t;
-                }
-
-                let botonesAccion = '';
-                if (!isIOS) {
-                    botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
-                }
-                botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
-
-                const row = document.createElement('div');
-                row.className = 'track-row';
-                if(item.timestamp) row.dataset.timestamp = item.timestamp;
+              while ((mLink = regexLink.exec(htmlBotones)) !== null) {
+                let idFull = mLink[1].replace('acestream://', '');
+                let pais = mLink[2].toLowerCase(); // 'es', 'gb', etc.
+                let nombreCanal = mLink[3].trim(); // 'DAZN', 'ESPN', etc.
                 
-                row.onclick = function(e) { copiarID(item.id, this.querySelector('.copy-btn'), e); };
-                
-                row.innerHTML = `
-                    <div class="track-icon-box">${contenidoIcono}</div>
-                    <div class="track-info">
-                        <div class="track-title">${item.titulo}</div>
-                        <div class="track-meta">
-                            <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
-                            ${item.origen !== 'PimpleTV' ? item.origen : ''} 
-                        </div>
-                    </div>
-                    <div class="actions-container">${botonesAccion}</div>
-                `;
-                container.appendChild(row);
-            });
-        }
+                if (!contadoresPais[pais]) contadoresPais[pais] = 0;
 
-        function actualizarContadores() {
-            document.querySelectorAll('.track-row[data-timestamp]').forEach(row => {
-                const ts = parseInt(row.dataset.timestamp);
-                const info = calcularTiempo(ts);
-                const badge = row.querySelector('.status-badge');
-                if (badge && info.texto) {
-                    badge.className = `status-badge ${info.clase}`;
-                    badge.innerText = info.texto;
+                // C. Lógica: Máximo 3 por país
+                if (contadoresPais[pais] < 3) {
+                  resultadosPlatin.push({
+                    id: idFull,
+                    categoria: "PLATIN SPORT", // Nueva pestaña
+                    titulo: tituloFinal,
+                    origen: `Platin (${pais.toUpperCase()} - ${nombreCanal})`,
+                    timestamp: fechaObj.getTime()
+                  });
+                  contadoresPais[pais]++;
                 }
-            });
-        }
-
-        function filtrar(categoria, btn) {
-            categoriaActual = categoria;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            renderizar(categoria === 'TODAS' ? todosLosDatos : todosLosDatos.filter(i => i.categoria === categoria));
-        }
-
-        function filtrarBusqueda() {
-            const texto = document.getElementById('searchInput').value.toLowerCase();
-            if (texto.length > 0) {
-                renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)));
-            } else {
-                renderizar(categoriaActual === 'TODAS' ? todosLosDatos : todosLosDatos.filter(i => i.categoria === categoriaActual));
+              }
             }
-        }
+          }
+        } catch(errBloque) {}
+      }
+    }
+  } catch(e) {}
 
-        function copiarID(texto, btnElemento, evento) {
-            if (evento) evento.stopPropagation();
-            if (navigator.vibrate) navigator.vibrate(50);
-            navigator.clipboard.writeText(texto).then(() => {
-                const fila = btnElemento.closest('.track-row');
-                document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
-                fila.classList.add('copied');
-                const meta = fila.querySelector('.track-meta');
-            });
-        }
-
-        function abrirEnlace(id, evento) {
-            if (evento) evento.stopPropagation();
-            if (navigator.vibrate) navigator.vibrate(50);
-            window.location.href = 'acestream://' + id;
-        }
-        iniciarCarga();
-    </script>
-</body>
-</html>
+  // AÑADIDO resultadosPlatin AL RETURN FINAL
+  return ContentService.createTextOutput(JSON.stringify([...resultadosPimple, ...resultadosAce, ...resultadosPlatin])).setMimeType(ContentService.MimeType.JSON);
+}
