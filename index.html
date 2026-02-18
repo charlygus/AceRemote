@@ -4,30 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AceRemote</title>
-    <link rel="stylesheet" href="style.css?v=43">
+    
+    <link rel="icon" type="image/png" href="favicon.ico">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <link rel="stylesheet" href="style.css?v=44">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
         body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
         .track-row {
-            will-change: transform; margin-bottom: 12px !important;
+            will-change: transform;
+            margin-bottom: 12px !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-            padding: 15px 12px !important; background: rgba(255, 255, 255, 0.03); border-radius: 8px;
+            padding: 15px 12px !important;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
         }
         .ids-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 5px; }
         .stream-pill {
             flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
             background: rgba(255, 255, 255, 0.12); padding: 6px 8px; border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .lang-flag { width: 20px; height: 13px; margin-bottom: 5px; border-radius: 1px; }
         .video-btn { background: #d35400 !important; color: white !important; }
+        .tab-btn.active { border-bottom: 3px solid #3498db; color: #3498db; }
     </style>
 </head>
 <body>
     <header>
         <div class="header-content">
-            <div class="brand-container"><img src="icon.png" alt="Logo" class="app-logo"><h1>AceRemote</h1></div>
-            <button onclick="iniciarCarga()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <div class="brand-container">
+                <img src="icon.png" alt="Logo" class="app-logo">
+                <h1>AceRemote</h1>
+            </div>
+            <button onclick="iniciarCarga()" class="refresh-btn">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
         </div>
         <div class="search-container">
             <div class="search-wrapper">
@@ -36,13 +50,15 @@
             </div>
         </div>
     </header>
+
     <div id="tabs-container" class="tabs"></div>
     <div id="loader" class="loader-container"><div id="loader-text" class="loader-text">0%</div></div>
     <main id="contenedor-eventos"></main>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
-        let todosLosDatos = []; let categoriaActual = '';
+        let todosLosDatos = []; 
+        let categoriaActual = '';
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         async function iniciarCarga() {
@@ -50,35 +66,50 @@
             const tabsContainer = document.getElementById('tabs-container');
             const loader = document.getElementById('loader');
             const loaderText = document.getElementById('loader-text');
-            container.innerHTML = ''; tabsContainer.innerHTML = '';
+            
+            container.innerHTML = ''; 
+            tabsContainer.innerHTML = '';
             loader.style.display = 'block';
+            
             let p = 0;
             let int = setInterval(() => { if(p<95){ p+=5; loaderText.innerText = p+'%'; } }, 100);
 
             try {
-                const res = await fetch(API_URL);
-                const datos = await res.json();
-                clearInterval(int); loader.style.display = 'none';
+                const response = await fetch(API_URL);
+                const datos = await response.json();
+                clearInterval(int);
+                loader.style.display = 'none';
                 todosLosDatos = datos;
                 generarPestanas(datos);
                 renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
-            } catch (e) { clearInterval(int); loaderText.innerText = 'Error'; }
+            } catch (error) {
+                clearInterval(int);
+                loaderText.innerText = 'Error';
+                console.error(error);
+            }
         }
 
         function generarPestanas(datos) {
             const container = document.getElementById('tabs-container');
-            const cats = [...new Set(datos.map(i => i.categoria))];
+            let categorias = [...new Set(datos.map(item => item.categoria))];
             const orden = ["PIMPLE TV", "MYFOOTBALL", "REPETIDOS", "OTROS"];
-            cats.sort((a,b) => (orden.indexOf(a)===-1?99:orden.indexOf(a)) - (orden.indexOf(b)===-1?99:orden.indexOf(b)));
-            categoriaActual = cats[0] || '';
-            cats.forEach(cat => {
+            
+            categorias.sort((a, b) => {
+                let idxA = orden.indexOf(a); let idxB = orden.indexOf(b);
+                if (idxA === -1) idxA = 90; if (idxB === -1) idxB = 90;
+                return idxA - idxB;
+            });
+
+            categoriaActual = categorias[0] || '';
+
+            categorias.forEach((cat) => {
                 const btn = document.createElement('button');
                 btn.className = cat === categoriaActual ? 'tab-btn active' : 'tab-btn';
-                btn.innerText = cat;
-                btn.onclick = () => {
+                btn.innerText = cat; 
+                btn.onclick = function() {
                     categoriaActual = cat;
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+                    this.classList.add('active');
                     renderizar(todosLosDatos.filter(i => i.categoria === cat));
                 };
                 container.appendChild(btn);
@@ -88,9 +119,11 @@
         function renderizar(lista) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
+            
             lista.forEach(item => {
                 let botones = '';
                 const esRep = item.categoria === "REPETIDOS";
+                
                 if (item.enlaces) {
                     botones = '<div class="ids-container">';
                     item.enlaces.forEach(s => {
@@ -109,10 +142,19 @@
                     botones = (!isIOS ? `<div class="action-icon ${cl}" onclick="abrir('${item.id}', event, ${esRep})"><i class="fa-solid ${ic}"></i></div>` : '') +
                               (!esRep ? `<div class="action-icon copy-btn" onclick="copiar('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>` : '');
                 }
+
+                const iconBox = (item.logo1 && item.logo2) ? `<div class="track-icon-box"><div class="team-logos"><div class="logo-circle"><img src="${item.logo1}"></div><div class="logo-circle"><img src="${item.logo2}"></div></div></div>` : '';
+
                 const row = document.createElement('div');
                 row.className = 'track-row';
-                const icon = (item.logo1 && item.logo2) ? `<div class="track-icon-box"><div class="team-logos"><div class="logo-circle"><img src="${item.logo1}"></div><div class="logo-circle"><img src="${item.logo2}"></div></div></div>` : '';
-                row.innerHTML = `${icon}<div class="track-info" style="${!icon?'padding-left:5px;':''}"><div class="track-title">${item.titulo}</div><div class="track-meta"><span class="status-badge">${item.origen}</span></div></div><div class="actions-container" style="flex:1; justify-content:flex-end;">${botones}</div>`;
+                row.innerHTML = `
+                    ${iconBox}
+                    <div class="track-info" style="${!iconBox?'padding-left:5px;':''}">
+                        <div class="track-title">${item.titulo}</div>
+                        <div class="track-meta"><span class="status-badge">${item.origen}</span></div>
+                    </div>
+                    <div class="actions-container" style="flex: 1; justify-content: flex-end; display:flex;">${botones}</div>
+                `;
                 container.appendChild(row);
             });
         }
