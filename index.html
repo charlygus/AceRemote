@@ -14,6 +14,40 @@
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <style>
+        /* Ajuste para Android TV y visualización de múltiples IDs */
+        .action-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+        .action-group-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .action-group-row:last-child {
+            border-bottom: none;
+        }
+        .lang-flag {
+            width: 22px;
+            height: 15px;
+            border-radius: 2px;
+            box-shadow: 0 0 3px rgba(0,0,0,0.5);
+        }
+        /* Refuerzo de separación entre partidos para pantallas oscuras */
+        .track-row {
+            border-bottom: 2px solid rgba(255,255,255,0.1) !important;
+            margin-bottom: 4px;
+            align-items: flex-start !important; /* Alineación arriba para filas con muchos IDs */
+            padding: 15px 10px !important;
+        }
+    </script>
 </head>
 <body>
     <header>
@@ -73,8 +107,8 @@
                     loader.style.display = 'none';
                     todosLosDatos = datos;
                     generarPestanas(datos);
-                    // Solo renderiza la pestaña que quedó activa por defecto
-                    renderizar(datos.filter(i => i.categoria === categoriaActual));
+                    // Renderizamos la categoría que quedó como activa (la primera del orden)
+                    renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
                     setInterval(actualizarContadores, 60000);
                 }, 200);
             } catch (error) {
@@ -85,29 +119,27 @@
 
         function generarPestanas(datos) {
             const tabsContainer = document.getElementById('tabs-container');
-            let categorias = [...new Set(datos.map(item => item.categoria))];
-
-            // Orden estricto deseado
-            const orden = ["PIMPLE TV", "MYFOOTBALL", "PLATIN SPORT", "OTROS"];
+            let categoriasSet = [...new Set(datos.map(item => item.categoria))];
             
-            categorias.sort((a, b) => {
-                let idxA = orden.indexOf(a);
-                let idxB = orden.indexOf(b);
-                if (idxA === -1) idxA = 50; 
-                if (idxB === -1) idxB = 50;
-                if (a === "OTROS") idxA = 100;
-                if (b === "OTROS") idxB = 100;
+            // Orden establecido: Pimple, MyFootball, Platin, Otros
+            const ordenSugerido = ["PIMPLE TV", "MYFOOTBALL", "PLATIN SPORT", "OTROS"];
+            
+            let categoriasOrdenadas = categoriasSet.sort((a, b) => {
+                let idxA = ordenSugerido.indexOf(a);
+                let idxB = ordenSugerido.indexOf(b);
+                if (idxA === -1) idxA = 99;
+                if (idxB === -1) idxB = 99;
                 return idxA - idxB;
             });
 
-            if (categorias.length > 0) {
-                categoriaActual = categorias[0]; // Por defecto seleccionamos la primera
+            if (categoriasOrdenadas.length > 0) {
+                categoriaActual = categoriasOrdenadas[0];
             }
 
-            categorias.forEach((cat) => {
+            categoriasOrdenadas.forEach(cat => {
                 if(cat) {
                     const btn = document.createElement('button');
-                    btn.className = cat === categoriaActual ? 'tab-btn active' : 'tab-btn';
+                    btn.className = (cat === categoriaActual) ? 'tab-btn active' : 'tab-btn';
                     btn.innerText = cat; 
                     btn.onclick = function() { filtrar(cat, this); };
                     tabsContainer.appendChild(btn);
@@ -129,10 +161,9 @@
                 const mins = diffMinutos % 60;
                 if (horas > 24) {
                     let fecha = new Date(timestamp);
-                    let dia = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
-                    let mes = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
-                    let minsStr = (fecha.getMinutes() < 10 ? '0' : '') + fecha.getMinutes();
-                    return { texto: `${dia}/${mes} • ${fecha.getHours()}:${minsStr}`, clase: "status-future" };
+                    let h = fecha.getHours();
+                    let m = (fecha.getMinutes() < 10 ? '0' : '') + fecha.getMinutes();
+                    return { texto: `${fecha.getDate()}/${fecha.getMonth()+1} • ${h}:${m}`, clase: "status-future" };
                 }
                 if (horas === 0) return { texto: `Comienza en ${mins}m`, clase: "status-soon" };
                 return { texto: `Comienza en ${horas}h ${mins}m`, clase: "status-future" };
@@ -150,9 +181,9 @@
             lista.forEach(item => {
                 let contenidoIcono = '';
                 let mostrarIcono = true;
-                
+
                 if (item.origen === "MyFootball") {
-                    mostrarIcono = false; 
+                    mostrarIcono = false; // Espacio extra para los IDs verticales
                 } else if (item.logo1 && item.logo2) {
                     contenidoIcono = `
                         <div class="team-logos">
@@ -178,20 +209,21 @@
 
                 let botonesAccion = '';
                 if (item.enlaces && item.enlaces.length > 0) {
-                    // USO DE CUADRÍCULA ESTRICTA (CSS GRID) PARA ALINEACIÓN PERFECTA
-                    botonesAccion += `<div style="display:grid; grid-template-columns: repeat(3, max-content); gap:6px; justify-content:end; margin-left:auto;">`;
+                    // IMPLEMENTACIÓN VERTICAL PARA ANDROID TV (Categoría MyFootball)
+                    botonesAccion += `<div class="action-stack">`;
                     item.enlaces.forEach((stream) => {
                         botonesAccion += `
-                        <div style="display:flex; flex-direction:column; align-items:center; background:rgba(255,255,255,0.05); padding:4px; border-radius:6px; border: 1px solid rgba(255,255,255,0.1); box-sizing:border-box;">
-                            <img src="${stream.bandera}" style="width:18px; height:12px; margin-bottom:4px; border-radius:2px;" alt="bandera">
-                            <div style="display:flex; gap:4px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:26px; height:26px; font-size:10px; display:flex; align-items:center; justify-content:center;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="margin:0; width:26px; height:26px; font-size:10px; display:flex; align-items:center; justify-content:center;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                        <div class="action-group-row">
+                            <img src="${stream.bandera}" class="lang-flag" alt="flag">
+                            <div style="display:flex; gap:8px;">
+                                ${!isIOS ? `<div class="action-icon play-btn" style="width:32px; height:32px; margin:0;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play" style="font-size:12px;"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="width:32px; height:32px; margin:0;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy" style="font-size:12px;"></i></div>
                             </div>
                         </div>`;
                     });
                     botonesAccion += `</div>`;
                 } else {
+                    // DISEÑO ESTÁNDAR (Pimple, Platin, Otros)
                     if (!isIOS) {
                         botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
                     }
@@ -208,14 +240,14 @@
                 
                 row.innerHTML = `
                     ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
-                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 10px;' : ''}">
-                        <div class="track-title">${item.titulo}</div>
+                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 5px;' : ''}">
+                        <div class="track-title" style="font-size: 1.05rem; margin-bottom: 5px;">${item.titulo}</div>
                         <div class="track-meta">
                             <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
                             ${item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? item.origen : ''} 
                         </div>
                     </div>
-                    <div class="actions-container" style="${!mostrarIcono ? 'flex-grow: 1; min-width: 50%; display: flex;' : ''}">${botonesAccion}</div>
+                    <div class="actions-container" style="${!mostrarIcono ? 'flex: 1; justify-content: flex-end;' : ''}">${botonesAccion}</div>
                 `;
                 container.appendChild(row);
             });
