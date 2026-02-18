@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <link rel="stylesheet" href="style.css?v=35">
+    <link rel="stylesheet" href="style.css?v=38">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <meta name="theme-color" content="#000000">
@@ -16,30 +16,48 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        /* Estilos para el carrusel horizontal de enlaces */
-        .swipe-container {
+        /* Contenedor de IDs para MyFootball: Ordenado y apto para TV */
+        .ids-container {
             display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            max-width: 100%;
-            /* Ocultar barra de desplazamiento para diseño más limpio */
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
+            flex-wrap: wrap; /* Si no caben, bajan de fila ordenadamente */
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 5px;
         }
-        .swipe-container::-webkit-scrollbar {
-            display: none; /* Chrome/Safari */
-        }
+
         .stream-pill {
             flex: 0 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(255, 255, 255, 0.08);
-            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.12); /* Más claro para destacar */
+            padding: 6px 8px;
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .lang-flag {
+            width: 20px;
+            height: 13px;
+            margin-bottom: 5px;
+            border-radius: 1px;
+            display: block;
+        }
+
+        /* Separación marcada entre partidos */
+        .track-row {
+            margin-bottom: 12px !important; /* Más separación */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+            padding: 15px 12px !important;
+            background: rgba(255, 255, 255, 0.03); /* Fondo sutil para la tarjeta */
+            border-radius: 8px;
+        }
+
+        .track-title {
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -101,7 +119,8 @@
                     loader.style.display = 'none';
                     todosLosDatos = datos;
                     generarPestanas(datos);
-                    renderizar(datos.filter(i => i.categoria === categoriaActual));
+                    // Cargamos automáticamente la primera pestaña definida en el orden
+                    renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
                     setInterval(actualizarContadores, 60000);
                 }, 200);
             } catch (error) {
@@ -119,10 +138,8 @@
             categorias.sort((a, b) => {
                 let idxA = orden.indexOf(a);
                 let idxB = orden.indexOf(b);
-                if (idxA === -1) idxA = 50; 
-                if (idxB === -1) idxB = 50;
-                if (a === "OTROS") idxA = 100;
-                if (b === "OTROS") idxB = 100;
+                if (idxA === -1) idxA = 80; 
+                if (idxB === -1) idxB = 80;
                 return idxA - idxB;
             });
 
@@ -155,13 +172,12 @@
                 const mins = diffMinutos % 60;
                 if (horas > 24) {
                     let fecha = new Date(timestamp);
-                    let dia = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
-                    let mes = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
-                    let minsStr = (fecha.getMinutes() < 10 ? '0' : '') + fecha.getMinutes();
-                    return { texto: `${dia}/${mes} • ${fecha.getHours()}:${minsStr}`, clase: "status-future" };
+                    let d = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
+                    let m = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
+                    return { texto: `${d}/${m} • ${fecha.getHours()}:${(fecha.getMinutes()<10?'0':'')+fecha.getMinutes()}`, clase: "status-future" };
                 }
-                if (horas === 0) return { texto: `Comienza en ${mins}m`, clase: "status-soon" };
-                return { texto: `Comienza en ${horas}h ${mins}m`, clase: "status-future" };
+                if (horas === 0) return { texto: `En ${mins}m`, clase: "status-soon" };
+                return { texto: `En ${horas}h ${mins}m`, clase: "status-future" };
             }
             return { texto: "", clase: "" };
         }
@@ -169,10 +185,12 @@
         function renderizar(lista) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
+            
             if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales disponibles.</p>`;
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay contenido disponible.</p>`;
                 return;
             }
+
             lista.forEach(item => {
                 let contenidoIcono = '';
                 let mostrarIcono = true;
@@ -191,28 +209,25 @@
                     const txt = (item.titulo + item.categoria).toUpperCase();
                     if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
                     else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
-                    else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
                     contenidoIcono = `<i class="fa-solid ${icono}"></i>`;
                 }
 
                 let infoTiempo = { texto: item.origen, clase: "" };
                 if ((item.origen === "PimpleTV" || item.origen === "MyFootball") && item.timestamp) {
-                    let t = calcularTiempo(item.timestamp);
+                    infoTiempo = calcularTiempo(item.timestamp);
                     item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
-                    infoTiempo = t;
                 }
 
                 let botonesAccion = '';
                 if (item.enlaces && item.enlaces.length > 0) {
-                    // CARRUSEL HORIZONTAL
-                    botonesAccion += `<div class="swipe-container" style="margin-left:auto;">`;
+                    botonesAccion += `<div class="ids-container">`;
                     item.enlaces.forEach((stream) => {
                         botonesAccion += `
                         <div class="stream-pill">
-                            <img src="${stream.bandera}" style="width:22px; height:14px; margin-bottom:8px; border-radius:2px; box-shadow: 0 0 3px rgba(0,0,0,0.6);" alt="bandera">
+                            <img src="${stream.bandera}" class="lang-flag" alt="bandera">
                             <div style="display:flex; gap:6px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:30px; height:30px; font-size:11px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4);" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="margin:0; width:30px; height:30px; font-size:11px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4);" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:30px; height:30px; font-size:11px;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="margin:0; width:30px; height:30px; font-size:11px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
@@ -226,9 +241,6 @@
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
-                // Añadimos un borde extra para asegurar la separación visual entre partidos oscuros
-                row.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
-                
                 if(item.timestamp) row.dataset.timestamp = item.timestamp;
                 
                 row.onclick = function(e) { 
@@ -237,14 +249,14 @@
                 
                 row.innerHTML = `
                     ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
-                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 10px; min-width: 40%;' : ''}">
+                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 5px;' : ''}">
                         <div class="track-title">${item.titulo}</div>
                         <div class="track-meta">
                             <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
-                            ${item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? item.origen : ''} 
+                            ${item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? '<span style="margin-left:8px; opacity:0.5; font-size:11px;">'+item.origen+'</span>' : ''} 
                         </div>
                     </div>
-                    <div class="actions-container" style="${!mostrarIcono ? 'flex-grow: 1; display: flex; overflow: hidden;' : ''}">${botonesAccion}</div>
+                    <div class="actions-container" style="${!mostrarIcono ? 'flex: 1; justify-content: flex-end;' : ''}">${botonesAccion}</div>
                 `;
                 container.appendChild(row);
             });
