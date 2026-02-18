@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <link rel="stylesheet" href="style.css?v=39">
+    <link rel="stylesheet" href="style.css?v=40">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <meta name="theme-color" content="#000000">
@@ -16,7 +16,23 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        /* Contenedor de IDs para MyFootball: Cuadrícula limpia para mando de TV */
+        /* OPTIMIZACIÓN DE RESOLUCIÓN Y RENDERIZADO */
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* ACELERACIÓN POR HARDWARE PARA SCROLL SUAVE EN TV */
+        .track-row {
+            will-change: transform;
+            margin-bottom: 12px !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+            padding: 15px 12px !important;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
         .ids-container {
             display: flex;
             flex-wrap: wrap;
@@ -43,21 +59,6 @@
             margin-bottom: 5px;
             border-radius: 1px;
             display: block;
-        }
-
-        /* Separación marcada entre tarjetas de partidos */
-        .track-row {
-            margin-bottom: 12px !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-            padding: 15px 12px !important;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-        }
-
-        .track-title {
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -108,7 +109,7 @@
                     if(porcentaje > 99) porcentaje = 99;
                     loaderText.innerText = porcentaje + '%';
                 }
-            }, 150);
+            }, 100);
 
             try {
                 const response = await fetch(API_URL);
@@ -121,7 +122,7 @@
                     generarPestanas(datos);
                     renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
                     setInterval(actualizarContadores, 60000);
-                }, 200);
+                }, 150);
             } catch (error) {
                 clearInterval(intervalo);
                 loaderText.innerText = 'Error';
@@ -131,8 +132,6 @@
         function generarPestanas(datos) {
             const tabsContainer = document.getElementById('tabs-container');
             let categorias = [...new Set(datos.map(item => item.categoria))];
-
-            // Orden definido: Pimple, MyFootball y Otros al final
             const orden = ["PIMPLE TV", "MYFOOTBALL", "OTROS"];
             
             categorias.sort((a, b) => {
@@ -186,11 +185,6 @@
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
             
-            if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay contenido disponible.</p>`;
-                return;
-            }
-
             lista.forEach(item => {
                 let contenidoIcono = '';
                 let mostrarIcono = true;
@@ -198,18 +192,9 @@
                 if (item.origen === "MyFootball") {
                     mostrarIcono = false; 
                 } else if (item.logo1 && item.logo2) {
-                    contenidoIcono = `
-                        <div class="team-logos">
-                            <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
-                            <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
-                        </div>
-                    `;
+                    contenidoIcono = `<div class="team-logos"><div class="logo-circle"><img src="${item.logo1}"></div><div class="logo-circle"><img src="${item.logo2}"></div></div>`;
                 } else {
-                    let icono = 'fa-tv';
-                    const txt = (item.titulo + item.categoria).toUpperCase();
-                    if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
-                    else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
-                    contenidoIcono = `<i class="fa-solid ${icono}"></i>`;
+                    contenidoIcono = `<i class="fa-solid fa-tv"></i>`;
                 }
 
                 let infoTiempo = { texto: item.origen, clase: "" };
@@ -224,10 +209,10 @@
                     item.enlaces.forEach((stream) => {
                         botonesAccion += `
                         <div class="stream-pill">
-                            <img src="${stream.bandera}" class="lang-flag" alt="bandera">
+                            <img src="${stream.bandera}" class="lang-flag">
                             <div style="display:flex; gap:6px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:30px; height:30px; font-size:11px;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="margin:0; width:30px; height:30px; font-size:11px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:30px; height:30px;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="margin:0; width:30px; height:30px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
