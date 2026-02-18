@@ -35,7 +35,8 @@
             flex-direction: column;
             align-items: center;
             background: rgba(255, 255, 255, 0.08);
-            padding: 8px 12px;
+            /* REDUCCIÓN DE PADDING: Menos aire alrededor de los botones */
+            padding: 6px 8px; 
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 2px 5px rgba(0,0,0,0.4);
@@ -231,13 +232,13 @@
                 if (item.enlaces && item.enlaces.length > 0) {
                     botonesAccion += `<div class="swipe-container" style="margin-left:auto;">`;
                     item.enlaces.forEach((stream) => {
-                        // AJUSTE PROPORCIÓN: Icono 24px en caja de 44px
+                        // AJUSTE MÁXIMO: Icono 32px, Caja 50px, Gap reducido a 6px
                         botonesAccion += `
                         <div class="stream-pill">
                             <img src="${stream.bandera}" style="width:26px; height:16px; margin-bottom:8px; border-radius:2px;" alt="bandera">
-                            <div style="display:flex; gap:10px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:44px; height:44px; font-size:24px; display:flex; align-items:center; justify-content:center;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="margin:0; width:44px; height:44px; font-size:24px; display:flex; align-items:center; justify-content:center;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                            <div style="display:flex; gap:6px;">
+                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:50px; height:50px; font-size:32px; display:flex; align-items:center; justify-content:center;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="margin:0; width:50px; height:50px; font-size:32px; display:flex; align-items:center; justify-content:center;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
