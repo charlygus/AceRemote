@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <link rel="stylesheet" href="style.css?v=35">
+    <link rel="stylesheet" href="style.css?v=36">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <meta name="theme-color" content="#000000">
@@ -16,36 +16,40 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        /* Ajuste para Android TV y visualización de múltiples IDs */
+        /* Estilos específicos para la vista de MyFootball en Android TV */
         .action-stack {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             width: 100%;
         }
         .action-group-row {
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 12px;
-            padding: 4px 0;
+            gap: 15px;
+            padding: 6px 0;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
         .action-group-row:last-child {
             border-bottom: none;
         }
         .lang-flag {
-            width: 22px;
-            height: 15px;
+            width: 24px;
+            height: 16px;
             border-radius: 2px;
-            box-shadow: 0 0 3px rgba(0,0,0,0.5);
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
         }
-        /* Refuerzo de separación entre partidos para pantallas oscuras */
+        /* Separación clara entre partidos */
         .track-row {
-            border-bottom: 2px solid rgba(255,255,255,0.1) !important;
-            margin-bottom: 4px;
-            align-items: flex-start !important; /* Alineación arriba para filas con muchos IDs */
-            padding: 15px 10px !important;
+            border-bottom: 2px solid rgba(255,255,255,0.12) !important;
+            margin-bottom: 8px;
+            align-items: flex-start !important;
+            padding: 18px 12px !important;
+            background: rgba(255,255,255,0.02);
+        }
+        .track-row:hover {
+            background: rgba(255,255,255,0.05);
         }
     </script>
 </head>
@@ -88,32 +92,37 @@
             container.innerHTML = ''; 
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
+            loaderText.innerText = '0%';
             
             let porcentaje = 0;
             let intervalo = setInterval(() => {
-                if (porcentaje < 98) {
-                    porcentaje += Math.floor(Math.random() * 10) + 5;
-                    if(porcentaje > 99) porcentaje = 99;
+                if (porcentaje < 95) {
+                    porcentaje += Math.floor(Math.random() * 10) + 2;
                     loaderText.innerText = porcentaje + '%';
                 }
-            }, 150);
+            }, 100);
 
             try {
                 const response = await fetch(API_URL);
                 const datos = await response.json();
                 clearInterval(intervalo);
                 loaderText.innerText = '100%';
+                
+                todosLosDatos = datos;
+                
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    todosLosDatos = datos;
-                    generarPestanas(datos);
-                    // Renderizamos la categoría que quedó como activa (la primera del orden)
-                    renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
+                    if (todosLosDatos && todosLosDatos.length > 0) {
+                        generarPestanas(todosLosDatos);
+                    } else {
+                        container.innerHTML = '<p style="text-align:center; color:#888; margin-top:50px;">No se encontraron datos.</p>';
+                    }
                     setInterval(actualizarContadores, 60000);
-                }, 200);
+                }, 300);
             } catch (error) {
                 clearInterval(intervalo);
-                loaderText.innerText = 'Error';
+                loader.style.display = 'none';
+                container.innerHTML = '<p style="text-align:center; color:red; margin-top:50px;">Error al cargar datos. Reintenta.</p>';
             }
         }
 
@@ -121,20 +130,18 @@
             const tabsContainer = document.getElementById('tabs-container');
             let categoriasSet = [...new Set(datos.map(item => item.categoria))];
             
-            // Orden establecido: Pimple, MyFootball, Platin, Otros
             const ordenSugerido = ["PIMPLE TV", "MYFOOTBALL", "PLATIN SPORT", "OTROS"];
             
             let categoriasOrdenadas = categoriasSet.sort((a, b) => {
                 let idxA = ordenSugerido.indexOf(a);
                 let idxB = ordenSugerido.indexOf(b);
-                if (idxA === -1) idxA = 99;
-                if (idxB === -1) idxB = 99;
+                if (idxA === -1) idxA = 90;
+                if (idxB === -1) idxB = 90;
                 return idxA - idxB;
             });
 
-            if (categoriasOrdenadas.length > 0) {
-                categoriaActual = categoriasOrdenadas[0];
-            }
+            // Seleccionamos la primera categoría por defecto
+            categoriaActual = categoriasOrdenadas[0] || '';
 
             categoriasOrdenadas.forEach(cat => {
                 if(cat) {
@@ -145,6 +152,10 @@
                     tabsContainer.appendChild(btn);
                 }
             });
+
+            if (categoriaActual) {
+                renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
+            }
         }
 
         function calcularTiempo(timestamp) {
@@ -163,10 +174,10 @@
                     let fecha = new Date(timestamp);
                     let h = fecha.getHours();
                     let m = (fecha.getMinutes() < 10 ? '0' : '') + fecha.getMinutes();
-                    return { texto: `${fecha.getDate()}/${fecha.getMonth()+1} • ${h}:${m}`, clase: "status-future" };
+                    return { texto: (fecha.getDate()) + "/" + (fecha.getMonth()+1) + " • " + h + ":" + m, clase: "status-future" };
                 }
-                if (horas === 0) return { texto: `Comienza en ${mins}m`, clase: "status-soon" };
-                return { texto: `Comienza en ${horas}h ${mins}m`, clase: "status-future" };
+                if (horas === 0) return { texto: "Comienza en " + mins + "m", clase: "status-soon" };
+                return { texto: "Comienza en " + horas + "h " + mins + "m", clase: "status-future" };
             }
             return { texto: "", clase: "" };
         }
@@ -174,60 +185,54 @@
         function renderizar(lista) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
-            if (lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales disponibles.</p>`;
+            
+            if (!lista || lista.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#555; margin-top:40px;">No hay canales en esta sección.</p>';
                 return;
             }
+
             lista.forEach(item => {
                 let contenidoIcono = '';
                 let mostrarIcono = true;
 
                 if (item.origen === "MyFootball") {
-                    mostrarIcono = false; // Espacio extra para los IDs verticales
+                    mostrarIcono = false; 
                 } else if (item.logo1 && item.logo2) {
-                    contenidoIcono = `
-                        <div class="team-logos">
-                            <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
-                            <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
-                        </div>
-                    `;
+                    contenidoIcono = '<div class="team-logos"><div class="logo-circle"><img src="'+item.logo1+'"></div><div class="logo-circle"><img src="'+item.logo2+'"></div></div>';
                 } else {
                     let icono = 'fa-tv';
                     const txt = (item.titulo + item.categoria).toUpperCase();
                     if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
                     else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
                     else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
-                    contenidoIcono = `<i class="fa-solid ${icono}"></i>`;
+                    contenidoIcono = '<i class="fa-solid '+icono+'"></i>';
                 }
 
                 let infoTiempo = { texto: item.origen, clase: "" };
                 if ((item.origen === "PimpleTV" || item.origen === "MyFootball") && item.timestamp) {
-                    let t = calcularTiempo(item.timestamp);
+                    infoTiempo = calcularTiempo(item.timestamp);
                     item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
-                    infoTiempo = t;
                 }
 
                 let botonesAccion = '';
                 if (item.enlaces && item.enlaces.length > 0) {
-                    // IMPLEMENTACIÓN VERTICAL PARA ANDROID TV (Categoría MyFootball)
-                    botonesAccion += `<div class="action-stack">`;
-                    item.enlaces.forEach((stream) => {
-                        botonesAccion += `
-                        <div class="action-group-row">
-                            <img src="${stream.bandera}" class="lang-flag" alt="flag">
-                            <div style="display:flex; gap:8px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="width:32px; height:32px; margin:0;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play" style="font-size:12px;"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="width:32px; height:32px; margin:0;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy" style="font-size:12px;"></i></div>
-                            </div>
-                        </div>`;
+                    // MODO VERTICAL PARA ANDROID TV
+                    botonesAccion = '<div class="action-stack">';
+                    item.enlaces.forEach(function(stream) {
+                        let playBtn = !isIOS ? '<div class="action-icon play-btn" style="width:34px; height:34px; margin:0;" onclick="abrirEnlace(\''+stream.id+'\', event)"><i class="fa-solid fa-play" style="font-size:12px;"></i></div>' : '';
+                        botonesAccion += '<div class="action-group-row">' +
+                            '<img src="'+stream.bandera+'" class="lang-flag">' +
+                            '<div style="display:flex; gap:10px;">' +
+                                playBtn +
+                                '<div class="action-icon copy-btn" style="width:34px; height:34px; margin:0;" onclick="copiarID(\''+stream.id+'\', this, event)"><i class="fa-regular fa-copy" style="font-size:12px;"></i></div>' +
+                            '</div>' +
+                        '</div>';
                     });
-                    botonesAccion += `</div>`;
+                    botonesAccion += '</div>';
                 } else {
-                    // DISEÑO ESTÁNDAR (Pimple, Platin, Otros)
-                    if (!isIOS) {
-                        botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
-                    }
-                    botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
+                    // MODO ESTÁNDAR
+                    let playBtn = !isIOS ? '<div class="action-icon play-btn" onclick="abrirEnlace(\''+item.id+'\', event)"><i class="fa-solid fa-play"></i></div>' : '';
+                    botonesAccion = playBtn + '<div class="action-icon copy-btn" onclick="copiarID(\''+item.id+'\', this, event)"><i class="fa-regular fa-copy"></i></div>';
                 }
 
                 const row = document.createElement('div');
@@ -238,17 +243,21 @@
                     if (!item.enlaces) copiarID(item.id, this.querySelector('.copy-btn'), e); 
                 };
                 
-                row.innerHTML = `
-                    ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
-                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 5px;' : ''}">
-                        <div class="track-title" style="font-size: 1.05rem; margin-bottom: 5px;">${item.titulo}</div>
-                        <div class="track-meta">
-                            <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
-                            ${item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? item.origen : ''} 
-                        </div>
-                    </div>
-                    <div class="actions-container" style="${!mostrarIcono ? 'flex: 1; justify-content: flex-end;' : ''}">${botonesAccion}</div>
-                `;
+                let iconHtml = mostrarIcono ? '<div class="track-icon-box">'+contenidoIcono+'</div>' : '';
+                let paddingStyle = !mostrarIcono ? 'padding-left: 5px;' : '';
+
+                row.innerHTML = iconHtml +
+                    '<div class="track-info" style="'+paddingStyle+'">' +
+                        '<div class="track-title" style="font-weight:600; font-size:1.05rem; margin-bottom:6px;">'+item.titulo+'</div>' +
+                        '<div class="track-meta">' +
+                            '<span class="status-badge '+infoTiempo.clase+'">'+infoTiempo.texto+'</span>' +
+                            (item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? '<span style="margin-left:8px; opacity:0.6; font-size:11px;">'+item.origen+'</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="actions-container" style="'+(!mostrarIcono ? 'flex:1; justify-content:flex-end;' : '')+'">' +
+                        botonesAccion +
+                    '</div>';
+                
                 container.appendChild(row);
             });
         }
@@ -259,7 +268,7 @@
                 const info = calcularTiempo(ts);
                 const badge = row.querySelector('.status-badge');
                 if (badge && info.texto) {
-                    badge.className = `status-badge ${info.clase}`;
+                    badge.className = 'status-badge ' + info.clase;
                     badge.innerText = info.texto;
                 }
             });
@@ -297,6 +306,7 @@
             if (navigator.vibrate) navigator.vibrate(50);
             window.location.href = 'acestream://' + id;
         }
+        
         iniciarCarga();
     </script>
 </body>
