@@ -118,18 +118,21 @@
             const diff = timestamp - ahora;
             const diffMinutos = Math.floor(diff / 1000 / 60);
 
-            if (diff <= 0 && diff > -7200000) return { texto: `🔴 EN JUEGO`, clase: "status-live" };
-            if (diff <= -7200000) return { texto: "Finalizado", clase: "status-ended" };
+            if (diff <= 0 && diff > -7200000) return { texto: `EN JUEGO`, clase: "status-live" };
+            if (diff <= -7200000) return { texto: "FINALIZADO", clase: "status-ended" };
 
             if (diff > 0) {
                 const horas = Math.floor(diffMinutos / 60);
                 const mins = diffMinutos % 60;
                 if (horas > 24) {
                     let fecha = new Date(timestamp);
-                    return { texto: `📅 ${fecha.getDate()}/${fecha.getMonth()+1} • ${fecha.getHours()}:${(fecha.getMinutes()<10?'0':'')+fecha.getMinutes()}`, clase: "status-future" };
+                    let dia = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
+                    let mes = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
+                    let minsStr = (fecha.getMinutes() < 10 ? '0' : '') + fecha.getMinutes();
+                    return { texto: `${dia}/${mes} • ${fecha.getHours()}:${minsStr}`, clase: "status-future" };
                 }
-                if (horas === 0) return { texto: `⏳ Comienza en ${mins}m`, clase: "status-soon" };
-                return { texto: `⏱️ Comienza en ${horas}h ${mins}m`, clase: "status-future" };
+                if (horas === 0) return { texto: `Comienza en ${mins}m`, clase: "status-soon" };
+                return { texto: `Comienza en ${horas}h ${mins}m`, clase: "status-future" };
             }
             return { texto: "", clase: "" };
         }
@@ -143,7 +146,12 @@
             }
             lista.forEach(item => {
                 let contenidoIcono = '';
-                if (item.logo1 && item.logo2) {
+                let mostrarIcono = true;
+                
+                // Lógica de iconos
+                if (item.origen === "MyFootball") {
+                    mostrarIcono = false; // Ocultamos el icono para ganar espacio horizontal
+                } else if (item.logo1 && item.logo2) {
                     contenidoIcono = `
                         <div class="team-logos">
                             <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
@@ -160,7 +168,7 @@
                 }
 
                 let infoTiempo = { texto: item.origen, clase: "" };
-                if (item.origen === "PimpleTV" && item.timestamp) {
+                if ((item.origen === "PimpleTV" || item.origen === "MyFootball") && item.timestamp) {
                     let t = calcularTiempo(item.timestamp);
                     item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
                     infoTiempo = t;
@@ -168,21 +176,21 @@
 
                 let botonesAccion = '';
                 if (item.enlaces && item.enlaces.length > 0) {
-                    // Formato MyFootball: múltiples enlaces en horizontal con banderas
-                    botonesAccion += `<div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end; margin-top:5px;">`;
+                    // Formato MyFootball: múltiples enlaces horizontales super compactos
+                    botonesAccion += `<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center;">`;
                     item.enlaces.forEach((stream) => {
                         botonesAccion += `
-                        <div style="display:flex; flex-direction:column; align-items:center; background:rgba(255,255,255,0.05); padding:6px; border-radius:6px; border: 1px solid rgba(255,255,255,0.1);">
-                            <img src="${stream.bandera}" style="width:20px; height:14px; margin-bottom:6px; border-radius:2px;" alt="bandera">
-                            <div style="display:flex; gap:6px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:28px; height:28px; font-size:11px;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="margin:0; width:28px; height:28px; font-size:11px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                        <div style="display:flex; flex-direction:column; align-items:center; background:rgba(255,255,255,0.05); padding:4px; border-radius:6px; border: 1px solid rgba(255,255,255,0.1);">
+                            <img src="${stream.bandera}" style="width:18px; height:12px; margin-bottom:4px; border-radius:2px;" alt="bandera">
+                            <div style="display:flex; gap:4px;">
+                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:26px; height:26px; font-size:10px; display:flex; align-items:center; justify-content:center;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="margin:0; width:26px; height:26px; font-size:10px; display:flex; align-items:center; justify-content:center;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
                     botonesAccion += `</div>`;
                 } else {
-                    // Formato estándar (Pimple TV, PlatinSport, etc.)
+                    // Formato estándar
                     if (!isIOS) {
                         botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
                     }
@@ -193,21 +201,20 @@
                 row.className = 'track-row';
                 if(item.timestamp) row.dataset.timestamp = item.timestamp;
                 
-                // Si es un bloque con array de enlaces, no copiamos nada al hacer click en la fila para evitar errores.
                 row.onclick = function(e) { 
                     if (!item.enlaces) copiarID(item.id, this.querySelector('.copy-btn'), e); 
                 };
                 
                 row.innerHTML = `
-                    <div class="track-icon-box">${contenidoIcono}</div>
-                    <div class="track-info">
+                    ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
+                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 10px;' : ''}">
                         <div class="track-title">${item.titulo}</div>
                         <div class="track-meta">
                             <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
                             ${item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? item.origen : ''} 
                         </div>
                     </div>
-                    <div class="actions-container">${botonesAccion}</div>
+                    <div class="actions-container" style="${!mostrarIcono ? 'flex-grow: 1; min-width: 50%;' : ''}">${botonesAccion}</div>
                 `;
                 container.appendChild(row);
             });
