@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <link rel="stylesheet" href="style.css?v=40">
+    <link rel="stylesheet" href="style.css?v=42">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <meta name="theme-color" content="#000000">
@@ -16,14 +16,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        /* OPTIMIZACIÓN DE RESOLUCIÓN Y RENDERIZADO */
-        body {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
-        }
-
-        /* ACELERACIÓN POR HARDWARE PARA SCROLL SUAVE EN TV */
+        body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+        
         .track-row {
             will-change: transform;
             margin-bottom: 12px !important;
@@ -53,13 +47,11 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        .lang-flag {
-            width: 20px;
-            height: 13px;
-            margin-bottom: 5px;
-            border-radius: 1px;
-            display: block;
-        }
+        .lang-flag { width: 20px; height: 13px; margin-bottom: 5px; border-radius: 1px; display: block; }
+
+        /* Estilo para los botones de REPETIDOS */
+        .repeat-btn { background: #d35400 !important; color: white !important; }
+        .full-match-btn { background: #27ae60 !important; color: white !important; }
     </style>
 </head>
 <body>
@@ -87,7 +79,6 @@
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
-        
         let todosLosDatos = []; 
         let categoriaActual = '';
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -105,8 +96,7 @@
             let porcentaje = 0;
             let intervalo = setInterval(() => {
                 if (porcentaje < 98) {
-                    porcentaje += Math.floor(Math.random() * 10) + 5;
-                    if(porcentaje > 99) porcentaje = 99;
+                    porcentaje += 5;
                     loaderText.innerText = porcentaje + '%';
                 }
             }, 100);
@@ -121,8 +111,7 @@
                     todosLosDatos = datos;
                     generarPestanas(datos);
                     renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
-                    setInterval(actualizarContadores, 60000);
-                }, 150);
+                }, 200);
             } catch (error) {
                 clearInterval(intervalo);
                 loaderText.innerText = 'Error';
@@ -132,7 +121,7 @@
         function generarPestanas(datos) {
             const tabsContainer = document.getElementById('tabs-container');
             let categorias = [...new Set(datos.map(item => item.categoria))];
-            const orden = ["PIMPLE TV", "MYFOOTBALL", "OTROS"];
+            const orden = ["PIMPLE TV", "MYFOOTBALL", "REPETIDOS", "OTROS"];
             
             categorias.sort((a, b) => {
                 let idxA = orden.indexOf(a);
@@ -142,43 +131,15 @@
                 return idxA - idxB;
             });
 
-            if (categorias.length > 0) {
-                categoriaActual = categorias[0]; 
-            }
+            if (categorias.length > 0) categoriaActual = categorias[0];
 
             categorias.forEach((cat) => {
-                if(cat) {
-                    const btn = document.createElement('button');
-                    btn.className = cat === categoriaActual ? 'tab-btn active' : 'tab-btn';
-                    btn.innerText = cat; 
-                    btn.onclick = function() { filtrar(cat, this); };
-                    tabsContainer.appendChild(btn);
-                }
+                const btn = document.createElement('button');
+                btn.className = cat === categoriaActual ? 'tab-btn active' : 'tab-btn';
+                btn.innerText = cat; 
+                btn.onclick = function() { filtrar(cat, this); };
+                tabsContainer.appendChild(btn);
             });
-        }
-
-        function calcularTiempo(timestamp) {
-            if (!timestamp) return { texto: "", clase: "" };
-            const ahora = new Date().getTime();
-            const diff = timestamp - ahora;
-            const diffMinutos = Math.floor(diff / 1000 / 60);
-
-            if (diff <= 0 && diff > -7200000) return { texto: `EN JUEGO`, clase: "status-live" };
-            if (diff <= -7200000) return { texto: "FINALIZADO", clase: "status-ended" };
-
-            if (diff > 0) {
-                const horas = Math.floor(diffMinutos / 60);
-                const mins = diffMinutos % 60;
-                if (horas > 24) {
-                    let fecha = new Date(timestamp);
-                    let d = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
-                    let m = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
-                    return { texto: d + "/" + m + " • " + fecha.getHours() + ":" + (fecha.getMinutes()<10?'0':'') + fecha.getMinutes(), clase: "status-future" };
-                }
-                if (horas === 0) return { texto: "En " + mins + "m", clase: "status-soon" };
-                return { texto: "En " + horas + "h " + mins + "m", clase: "status-future" };
-            }
-            return { texto: "", clase: "" };
         }
 
         function renderizar(lista) {
@@ -186,24 +147,9 @@
             container.innerHTML = '';
             
             lista.forEach(item => {
-                let contenidoIcono = '';
-                let mostrarIcono = true;
-                
-                if (item.origen === "MyFootball") {
-                    mostrarIcono = false; 
-                } else if (item.logo1 && item.logo2) {
-                    contenidoIcono = `<div class="team-logos"><div class="logo-circle"><img src="${item.logo1}"></div><div class="logo-circle"><img src="${item.logo2}"></div></div>`;
-                } else {
-                    contenidoIcono = `<i class="fa-solid fa-tv"></i>`;
-                }
-
-                let infoTiempo = { texto: item.origen, clase: "" };
-                if ((item.origen === "PimpleTV" || item.origen === "MyFootball") && item.timestamp) {
-                    infoTiempo = calcularTiempo(item.timestamp);
-                    item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
-                }
-
                 let botonesAccion = '';
+                let esRepetido = item.isWeb;
+
                 if (item.enlaces && item.enlaces.length > 0) {
                     botonesAccion += `<div class="ids-container">`;
                     item.enlaces.forEach((stream) => {
@@ -211,51 +157,36 @@
                         <div class="stream-pill">
                             <img src="${stream.bandera}" class="lang-flag">
                             <div style="display:flex; gap:6px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:30px; height:30px;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="margin:0; width:30px; height:30px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                                ${!isIOS ? `<div class="action-icon play-btn" style="width:30px; height:30px;" onclick="abrirEnlace('${stream.id}', event, ${esRepetido || false})"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="width:30px; height:30px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
                     botonesAccion += `</div>`;
                 } else {
+                    let claseExtra = item.titulo.includes("COMPLETO") ? "full-match-btn" : (esRepetido ? "repeat-btn" : "play-btn");
+                    let icono = esRepetido ? "fa-video" : "fa-play";
+                    
                     if (!isIOS) {
-                        botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
+                        botonesAccion += `<div class="action-icon ${claseExtra}" onclick="abrirEnlace('${item.id}', event, ${esRepetido || false})"><i class="fa-solid ${icono}"></i></div>`;
                     }
-                    botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
+                    if (!esRepetido) {
+                        botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
+                    }
                 }
 
                 const row = document.createElement('div');
                 row.className = 'track-row';
-                if(item.timestamp) row.dataset.timestamp = item.timestamp;
-                
-                row.onclick = function(e) { 
-                    if (!item.enlaces) copiarID(item.id, this.querySelector('.copy-btn'), e); 
-                };
-                
                 row.innerHTML = `
-                    ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
-                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 5px;' : ''}">
+                    <div class="track-info" style="padding-left: 5px;">
                         <div class="track-title">${item.titulo}</div>
                         <div class="track-meta">
-                            <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
-                            ${item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? '<span style="margin-left:8px; opacity:0.5; font-size:11px;">'+item.origen+'</span>' : ''} 
+                            <span class="status-badge">${item.origen}</span>
                         </div>
                     </div>
-                    <div class="actions-container" style="${!mostrarIcono ? 'flex: 1; justify-content: flex-end;' : ''}">${botonesAccion}</div>
+                    <div class="actions-container" style="flex: 1; justify-content: flex-end;">${botonesAccion}</div>
                 `;
                 container.appendChild(row);
-            });
-        }
-
-        function actualizarContadores() {
-            document.querySelectorAll('.track-row[data-timestamp]').forEach(row => {
-                const ts = parseInt(row.dataset.timestamp);
-                const info = calcularTiempo(ts);
-                const badge = row.querySelector('.status-badge');
-                if (badge && info.texto) {
-                    badge.className = 'status-badge ' + info.clase;
-                    badge.innerText = info.texto;
-                }
             });
         }
 
@@ -263,22 +194,16 @@
             categoriaActual = categoria;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             renderizar(todosLosDatos.filter(i => i.categoria === categoria));
         }
 
         function filtrarBusqueda() {
             const texto = document.getElementById('searchInput').value.toLowerCase();
-            if (texto.length > 0) {
-                renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)));
-            } else {
-                renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
-            }
+            renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)));
         }
 
         function copiarID(texto, btnElemento, evento) {
             if (evento) evento.stopPropagation();
-            if (navigator.vibrate) navigator.vibrate(50);
             navigator.clipboard.writeText(texto).then(() => {
                 const fila = btnElemento.closest('.track-row');
                 document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
@@ -286,10 +211,13 @@
             });
         }
 
-        function abrirEnlace(id, evento) {
+        function abrirEnlace(id, evento, esWeb) {
             if (evento) evento.stopPropagation();
-            if (navigator.vibrate) navigator.vibrate(50);
-            window.location.href = 'acestream://' + id;
+            if (esWeb) {
+                window.open(id, '_blank');
+            } else {
+                window.location.href = 'acestream://' + id;
+            }
         }
         iniciarCarga();
     </script>
