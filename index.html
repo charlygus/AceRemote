@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <link rel="stylesheet" href="style.css?v=38">
+    <link rel="stylesheet" href="style.css?v=39">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <meta name="theme-color" content="#000000">
@@ -16,10 +16,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        /* Contenedor de IDs para MyFootball: Ordenado y apto para TV */
+        /* Contenedor de IDs para MyFootball: Cuadrícula limpia para mando de TV */
         .ids-container {
             display: flex;
-            flex-wrap: wrap; /* Si no caben, bajan de fila ordenadamente */
+            flex-wrap: wrap;
             gap: 8px;
             justify-content: flex-end;
             margin-top: 5px;
@@ -30,7 +30,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(255, 255, 255, 0.12); /* Más claro para destacar */
+            background: rgba(255, 255, 255, 0.12);
             padding: 6px 8px;
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -45,12 +45,12 @@
             display: block;
         }
 
-        /* Separación marcada entre partidos */
+        /* Separación marcada entre tarjetas de partidos */
         .track-row {
-            margin-bottom: 12px !important; /* Más separación */
+            margin-bottom: 12px !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
             padding: 15px 12px !important;
-            background: rgba(255, 255, 255, 0.03); /* Fondo sutil para la tarjeta */
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 8px;
         }
 
@@ -119,7 +119,6 @@
                     loader.style.display = 'none';
                     todosLosDatos = datos;
                     generarPestanas(datos);
-                    // Cargamos automáticamente la primera pestaña definida en el orden
                     renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
                     setInterval(actualizarContadores, 60000);
                 }, 200);
@@ -133,7 +132,8 @@
             const tabsContainer = document.getElementById('tabs-container');
             let categorias = [...new Set(datos.map(item => item.categoria))];
 
-            const orden = ["PIMPLE TV", "MYFOOTBALL", "PLATIN SPORT", "OTROS"];
+            // Orden definido: Pimple, MyFootball y Otros al final
+            const orden = ["PIMPLE TV", "MYFOOTBALL", "OTROS"];
             
             categorias.sort((a, b) => {
                 let idxA = orden.indexOf(a);
@@ -174,10 +174,10 @@
                     let fecha = new Date(timestamp);
                     let d = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
                     let m = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
-                    return { texto: `${d}/${m} • ${fecha.getHours()}:${(fecha.getMinutes()<10?'0':'')+fecha.getMinutes()}`, clase: "status-future" };
+                    return { texto: d + "/" + m + " • " + fecha.getHours() + ":" + (fecha.getMinutes()<10?'0':'') + fecha.getMinutes(), clase: "status-future" };
                 }
-                if (horas === 0) return { texto: `En ${mins}m`, clase: "status-soon" };
-                return { texto: `En ${horas}h ${mins}m`, clase: "status-future" };
+                if (horas === 0) return { texto: "En " + mins + "m", clase: "status-soon" };
+                return { texto: "En " + horas + "h " + mins + "m", clase: "status-future" };
             }
             return { texto: "", clase: "" };
         }
@@ -268,7 +268,7 @@
                 const info = calcularTiempo(ts);
                 const badge = row.querySelector('.status-badge');
                 if (badge && info.texto) {
-                    badge.className = `status-badge ${info.clase}`;
+                    badge.className = 'status-badge ' + info.clase;
                     badge.innerText = info.texto;
                 }
             });
