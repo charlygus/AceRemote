@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <link rel="stylesheet" href="style.css?v=37">
+    <link rel="stylesheet" href="style.css?v=35">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <meta name="theme-color" content="#000000">
@@ -16,11 +16,31 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        .action-stack { display: table; width: 100%; border-spacing: 0 8px; }
-        .action-group-row { display: table-row; }
-        .action-cell { display: table-cell; vertical-align: middle; text-align: right; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .lang-flag { width: 22px; height: 14px; border-radius: 2px; margin-right: 10px; vertical-align: middle; }
-        .track-row { border-bottom: 2px solid rgba(255,255,255,0.12) !important; margin-bottom: 5px; padding: 15px 10px !important; }
+        /* Estilos para el carrusel horizontal de enlaces */
+        .swipe-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            max-width: 100%;
+            /* Ocultar barra de desplazamiento para diseño más limpio */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        .swipe-container::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+        .stream-pill {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body>
@@ -30,12 +50,14 @@
                 <img src="icon.png" alt="Logo" class="app-logo">
                 <h1>AceRemote</h1>
             </div>
-            <button onclick="iniciarCarga()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button onclick="iniciarCarga()" class="refresh-btn">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
         </div>
         <div class="search-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="filtrarBusqueda()">
+                <input type="text" id="searchInput" placeholder="Buscar canal o partido..." onkeyup="filtrarBusqueda()">
             </div>
         </div>
     </header>
@@ -45,167 +67,233 @@
     <main id="contenedor-eventos"></main>
 
     <script>
-        // REEMPLAZA CON TU URL DE GOOGLE APPS SCRIPT
-        var API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
         
-        var todosLosDatos = []; 
-        var categoriaActual = '';
-        var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        let todosLosDatos = []; 
+        let categoriaActual = '';
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        function iniciarCarga() {
-            var container = document.getElementById('contenedor-eventos');
-            var tabsContainer = document.getElementById('tabs-container');
-            var loader = document.getElementById('loader');
-            var loaderText = document.getElementById('loader-text');
+        async function iniciarCarga() {
+            const container = document.getElementById('contenedor-eventos');
+            const tabsContainer = document.getElementById('tabs-container');
+            const loader = document.getElementById('loader');
+            const loaderText = document.getElementById('loader-text');
             
             container.innerHTML = ''; 
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
-            loaderText.innerText = '0%';
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', API_URL, true);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4) {
-                    if (xhr.status == 200) {
-                        loaderText.innerText = '100%';
-                        try {
-                            todosLosDatos = JSON.parse(xhr.responseText);
-                            loader.style.display = 'none';
-                            generarPestanas(todosLosDatos);
-                        } catch(e) {
-                            loader.style.display = 'none';
-                            container.innerHTML = '<p style="color:red; text-align:center;">Error en datos</p>';
-                        }
-                    } else {
-                        loader.style.display = 'none';
-                        container.innerHTML = '<p style="color:red; text-align:center;">Error de conexión</p>';
-                    }
+            
+            let porcentaje = 0;
+            let intervalo = setInterval(() => {
+                if (porcentaje < 98) {
+                    porcentaje += Math.floor(Math.random() * 10) + 5;
+                    if(porcentaje > 99) porcentaje = 99;
+                    loaderText.innerText = porcentaje + '%';
                 }
-            };
-            xhr.send();
+            }, 150);
+
+            try {
+                const response = await fetch(API_URL);
+                const datos = await response.json();
+                clearInterval(intervalo);
+                loaderText.innerText = '100%';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    todosLosDatos = datos;
+                    generarPestanas(datos);
+                    renderizar(datos.filter(i => i.categoria === categoriaActual));
+                    setInterval(actualizarContadores, 60000);
+                }, 200);
+            } catch (error) {
+                clearInterval(intervalo);
+                loaderText.innerText = 'Error';
+            }
         }
 
         function generarPestanas(datos) {
-            var tabsContainer = document.getElementById('tabs-container');
-            var cats = [];
-            for (var i = 0; i < datos.length; i++) {
-                if (cats.indexOf(datos[i].categoria) === -1) cats.push(datos[i].categoria);
-            }
+            const tabsContainer = document.getElementById('tabs-container');
+            let categorias = [...new Set(datos.map(item => item.categoria))];
 
-            var orden = ["PIMPLE TV", "MYFOOTBALL", "PLATIN SPORT", "OTROS"];
-            cats.sort(function(a, b) {
-                var idxA = orden.indexOf(a);
-                var idxB = orden.indexOf(b);
-                if (idxA === -1) idxA = 99;
-                if (idxB === -1) idxB = 99;
+            const orden = ["PIMPLE TV", "MYFOOTBALL", "PLATIN SPORT", "OTROS"];
+            
+            categorias.sort((a, b) => {
+                let idxA = orden.indexOf(a);
+                let idxB = orden.indexOf(b);
+                if (idxA === -1) idxA = 50; 
+                if (idxB === -1) idxB = 50;
+                if (a === "OTROS") idxA = 100;
+                if (b === "OTROS") idxB = 100;
                 return idxA - idxB;
             });
 
-            categoriaActual = cats[0] || '';
-
-            for (var j = 0; j < cats.length; j++) {
-                var btn = document.createElement('button');
-                btn.className = (cats[j] === categoriaActual) ? 'tab-btn active' : 'tab-btn';
-                btn.innerText = cats[j];
-                btn.setAttribute('onclick', "filtrar('" + cats[j] + "', this)");
-                tabsContainer.appendChild(btn);
+            if (categorias.length > 0) {
+                categoriaActual = categorias[0]; 
             }
 
-            if (categoriaActual) {
-                var filtrados = [];
-                for (var k = 0; k < datos.length; k++) {
-                    if (datos[k].categoria === categoriaActual) filtrados.push(datos[k]);
+            categorias.forEach((cat) => {
+                if(cat) {
+                    const btn = document.createElement('button');
+                    btn.className = cat === categoriaActual ? 'tab-btn active' : 'tab-btn';
+                    btn.innerText = cat; 
+                    btn.onclick = function() { filtrar(cat, this); };
+                    tabsContainer.appendChild(btn);
                 }
-                renderizar(filtrados);
+            });
+        }
+
+        function calcularTiempo(timestamp) {
+            if (!timestamp) return { texto: "", clase: "" };
+            const ahora = new Date().getTime();
+            const diff = timestamp - ahora;
+            const diffMinutos = Math.floor(diff / 1000 / 60);
+
+            if (diff <= 0 && diff > -7200000) return { texto: `EN JUEGO`, clase: "status-live" };
+            if (diff <= -7200000) return { texto: "FINALIZADO", clase: "status-ended" };
+
+            if (diff > 0) {
+                const horas = Math.floor(diffMinutos / 60);
+                const mins = diffMinutos % 60;
+                if (horas > 24) {
+                    let fecha = new Date(timestamp);
+                    let dia = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
+                    let mes = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
+                    let minsStr = (fecha.getMinutes() < 10 ? '0' : '') + fecha.getMinutes();
+                    return { texto: `${dia}/${mes} • ${fecha.getHours()}:${minsStr}`, clase: "status-future" };
+                }
+                if (horas === 0) return { texto: `Comienza en ${mins}m`, clase: "status-soon" };
+                return { texto: `Comienza en ${horas}h ${mins}m`, clase: "status-future" };
             }
+            return { texto: "", clase: "" };
         }
 
         function renderizar(lista) {
-            var container = document.getElementById('contenedor-eventos');
+            const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
-            
-            for (var i = 0; i < lista.length; i++) {
-                var item = lista[i];
-                var row = document.createElement('div');
-                row.className = 'track-row';
-                
-                var contenidoIcono = '';
-                var mostrarIcono = true;
-                if (item.origen === "MyFootball") {
-                    mostrarIcono = false;
-                } else if (item.logo1 && item.logo2) {
-                    contenidoIcono = '<div class="team-logos"><div class="logo-circle"><img src="'+item.logo1+'"></div><div class="logo-circle"><img src="'+item.logo2+'"></div></div>';
-                } else {
-                    contenidoIcono = '<i class="fa-solid fa-tv"></i>';
-                }
-
-                var botonesHtml = '';
-                if (item.enlaces && item.enlaces.length > 0) {
-                    botonesHtml = '<div class="action-stack">';
-                    for (var j = 0; j < item.enlaces.length; j++) {
-                        var s = item.enlaces[j];
-                        botonesHtml += '<div class="action-group-row"><div class="action-cell">' +
-                            '<img src="'+s.bandera+'" class="lang-flag">' +
-                            (!isIOS ? '<div class="action-icon play-btn" onclick="abrirEnlace(\''+s.id+'\', event)"><i class="fa-solid fa-play"></i></div>' : '') +
-                            '<div class="action-icon copy-btn" onclick="copiarID(\''+s.id+'\', this, event)"><i class="fa-regular fa-copy"></i></div>' +
-                        '</div></div>';
-                    }
-                    botonesHtml += '</div>';
-                } else {
-                    botonesHtml = (!isIOS ? '<div class="action-icon play-btn" onclick="abrirEnlace(\''+item.id+'\', event)"><i class="fa-solid fa-play"></i></div>' : '') +
-                                  '<div class="action-icon copy-btn" onclick="copiarID(\''+item.id+'\', this, event)"><i class="fa-regular fa-copy"></i></div>';
-                }
-
-                row.innerHTML = (mostrarIcono ? '<div class="track-icon-box">'+contenidoIcono+'</div>' : '') +
-                    '<div class="track-info" style="'+(!mostrarIcono ? 'padding-left:10px;' : '')+'">' +
-                        '<div class="track-title" style="font-weight:bold;">'+item.titulo+'</div>' +
-                        '<div class="track-meta"><span class="status-badge">'+item.origen+'</span></div>' +
-                    '</div>' +
-                    '<div class="actions-container" style="flex:1; justify-content:flex-end; display:flex;">' + botonesHtml + '</div>';
-                
-                container.appendChild(row);
+            if (lista.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No hay canales disponibles.</p>`;
+                return;
             }
+            lista.forEach(item => {
+                let contenidoIcono = '';
+                let mostrarIcono = true;
+                
+                if (item.origen === "MyFootball") {
+                    mostrarIcono = false; 
+                } else if (item.logo1 && item.logo2) {
+                    contenidoIcono = `
+                        <div class="team-logos">
+                            <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
+                            <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
+                        </div>
+                    `;
+                } else {
+                    let icono = 'fa-tv';
+                    const txt = (item.titulo + item.categoria).toUpperCase();
+                    if (txt.includes('FÚTBOL') || txt.includes('PIMPLE') || txt.includes('SOCCER')) icono = 'fa-futbol';
+                    else if (txt.includes('MOTOR') || txt.includes('F1')) icono = 'fa-car-side';
+                    else if (txt.includes('NBA') || txt.includes('BASKET')) icono = 'fa-basketball';
+                    contenidoIcono = `<i class="fa-solid ${icono}"></i>`;
+                }
+
+                let infoTiempo = { texto: item.origen, clase: "" };
+                if ((item.origen === "PimpleTV" || item.origen === "MyFootball") && item.timestamp) {
+                    let t = calcularTiempo(item.timestamp);
+                    item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
+                    infoTiempo = t;
+                }
+
+                let botonesAccion = '';
+                if (item.enlaces && item.enlaces.length > 0) {
+                    // CARRUSEL HORIZONTAL
+                    botonesAccion += `<div class="swipe-container" style="margin-left:auto;">`;
+                    item.enlaces.forEach((stream) => {
+                        botonesAccion += `
+                        <div class="stream-pill">
+                            <img src="${stream.bandera}" style="width:22px; height:14px; margin-bottom:8px; border-radius:2px; box-shadow: 0 0 3px rgba(0,0,0,0.6);" alt="bandera">
+                            <div style="display:flex; gap:6px;">
+                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:30px; height:30px; font-size:11px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4);" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="margin:0; width:30px; height:30px; font-size:11px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4);" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                            </div>
+                        </div>`;
+                    });
+                    botonesAccion += `</div>`;
+                } else {
+                    if (!isIOS) {
+                        botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
+                    }
+                    botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
+                }
+
+                const row = document.createElement('div');
+                row.className = 'track-row';
+                // Añadimos un borde extra para asegurar la separación visual entre partidos oscuros
+                row.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
+                
+                if(item.timestamp) row.dataset.timestamp = item.timestamp;
+                
+                row.onclick = function(e) { 
+                    if (!item.enlaces) copiarID(item.id, this.querySelector('.copy-btn'), e); 
+                };
+                
+                row.innerHTML = `
+                    ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
+                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 10px; min-width: 40%;' : ''}">
+                        <div class="track-title">${item.titulo}</div>
+                        <div class="track-meta">
+                            <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
+                            ${item.origen !== 'PimpleTV' && item.origen !== 'MyFootball' ? item.origen : ''} 
+                        </div>
+                    </div>
+                    <div class="actions-container" style="${!mostrarIcono ? 'flex-grow: 1; display: flex; overflow: hidden;' : ''}">${botonesAccion}</div>
+                `;
+                container.appendChild(row);
+            });
         }
 
-        function filtrar(cat, btn) {
-            categoriaActual = cat;
-            var btns = document.getElementsByClassName('tab-btn');
-            for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+        function actualizarContadores() {
+            document.querySelectorAll('.track-row[data-timestamp]').forEach(row => {
+                const ts = parseInt(row.dataset.timestamp);
+                const info = calcularTiempo(ts);
+                const badge = row.querySelector('.status-badge');
+                if (badge && info.texto) {
+                    badge.className = `status-badge ${info.clase}`;
+                    badge.innerText = info.texto;
+                }
+            });
+        }
+
+        function filtrar(categoria, btn) {
+            categoriaActual = categoria;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            var filtrados = [];
-            for (var j = 0; j < todosLosDatos.length; j++) {
-                if (todosLosDatos[j].categoria === cat) filtrados.push(todosLosDatos[j]);
-            }
-            renderizar(filtrados);
+            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            renderizar(todosLosDatos.filter(i => i.categoria === categoria));
         }
 
         function filtrarBusqueda() {
-            var q = document.getElementById('searchInput').value.toLowerCase();
-            var filtrados = [];
-            for (var i = 0; i < todosLosDatos.length; i++) {
-                if ((todosLosDatos[i].titulo + todosLosDatos[i].categoria).toLowerCase().indexOf(q) !== -1) filtrados.push(todosLosDatos[i]);
+            const texto = document.getElementById('searchInput').value.toLowerCase();
+            if (texto.length > 0) {
+                renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)));
+            } else {
+                renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
             }
-            renderizar(filtrados);
         }
 
-        function copiarID(txt, btn, ev) {
-            if (ev) ev.stopPropagation();
-            var dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.value = txt;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
-            btn.closest('.track-row').classList.add('copied');
+        function copiarID(texto, btnElemento, evento) {
+            if (evento) evento.stopPropagation();
+            if (navigator.vibrate) navigator.vibrate(50);
+            navigator.clipboard.writeText(texto).then(() => {
+                const fila = btnElemento.closest('.track-row');
+                document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
+                fila.classList.add('copied');
+            });
         }
 
-        function abrirEnlace(id, ev) {
-            if (ev) ev.stopPropagation();
+        function abrirEnlace(id, evento) {
+            if (evento) evento.stopPropagation();
+            if (navigator.vibrate) navigator.vibrate(50);
             window.location.href = 'acestream://' + id;
         }
-
         iniciarCarga();
     </script>
 </body>
