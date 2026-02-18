@@ -4,26 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AceRemote</title>
-    
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
-    
-    <link rel="stylesheet" href="style.css?v=42">
+    <link rel="stylesheet" href="style.css?v=43">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
     <style>
         body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
         .track-row {
-            will-change: transform;
-            margin-bottom: 12px !important;
+            will-change: transform; margin-bottom: 12px !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-            padding: 15px 12px !important;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
+            padding: 15px 12px !important; background: rgba(255, 255, 255, 0.03); border-radius: 8px;
         }
         .ids-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 5px; }
         .stream-pill {
@@ -31,37 +19,30 @@
             background: rgba(255, 255, 255, 0.12); padding: 6px 8px; border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
-        .lang-flag { width: 20px; height: 13px; margin-bottom: 5px; border-radius: 1px; display: block; }
+        .lang-flag { width: 20px; height: 13px; margin-bottom: 5px; border-radius: 1px; }
         .video-btn { background: #d35400 !important; color: white !important; }
     </style>
 </head>
 <body>
     <header>
         <div class="header-content">
-            <div class="brand-container">
-                <img src="icon.png" alt="Logo" class="app-logo">
-                <h1>AceRemote</h1>
-            </div>
-            <button onclick="iniciarCarga()" class="refresh-btn">
-                <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
+            <div class="brand-container"><img src="icon.png" alt="Logo" class="app-logo"><h1>AceRemote</h1></div>
+            <button onclick="iniciarCarga()" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i></button>
         </div>
         <div class="search-container">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Buscar canal o partido..." onkeyup="filtrarBusqueda()">
+                <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="filtrarBusqueda()">
             </div>
         </div>
     </header>
-
     <div id="tabs-container" class="tabs"></div>
     <div id="loader" class="loader-container"><div id="loader-text" class="loader-text">0%</div></div>
     <main id="contenedor-eventos"></main>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
-        let todosLosDatos = []; 
-        let categoriaActual = '';
+        let todosLosDatos = []; let categoriaActual = '';
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         async function iniciarCarga() {
@@ -71,182 +52,76 @@
             const loaderText = document.getElementById('loader-text');
             container.innerHTML = ''; tabsContainer.innerHTML = '';
             loader.style.display = 'block';
-            
-            let porcentaje = 0;
-            let intervalo = setInterval(() => {
-                if (porcentaje < 98) { porcentaje += 5; loaderText.innerText = porcentaje + '%'; }
-            }, 100);
+            let p = 0;
+            let int = setInterval(() => { if(p<95){ p+=5; loaderText.innerText = p+'%'; } }, 100);
 
             try {
-                const response = await fetch(API_URL);
-                const datos = await response.json();
-                clearInterval(intervalo);
-                loaderText.innerText = '100%';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    todosLosDatos = datos;
-                    generarPestanas(datos);
-                    renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
-                    setInterval(actualizarContadores, 60000);
-                }, 200);
-            } catch (error) {
-                clearInterval(intervalo);
-                loaderText.innerText = 'Error';
-            }
+                const res = await fetch(API_URL);
+                const datos = await res.json();
+                clearInterval(int); loader.style.display = 'none';
+                todosLosDatos = datos;
+                generarPestanas(datos);
+                renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
+            } catch (e) { clearInterval(int); loaderText.innerText = 'Error'; }
         }
 
         function generarPestanas(datos) {
-            const tabsContainer = document.getElementById('tabs-container');
-            let categorias = [...new Set(datos.map(item => item.categoria))];
+            const container = document.getElementById('tabs-container');
+            const cats = [...new Set(datos.map(i => i.categoria))];
             const orden = ["PIMPLE TV", "MYFOOTBALL", "REPETIDOS", "OTROS"];
-            
-            categorias.sort((a, b) => {
-                let idxA = orden.indexOf(a); let idxB = orden.indexOf(b);
-                if (idxA === -1) idxA = 80; if (idxB === -1) idxB = 80;
-                return idxA - idxB;
-            });
-
-            if (categorias.length > 0) categoriaActual = categorias[0];
-
-            categorias.forEach((cat) => {
+            cats.sort((a,b) => (orden.indexOf(a)===-1?99:orden.indexOf(a)) - (orden.indexOf(b)===-1?99:orden.indexOf(b)));
+            categoriaActual = cats[0] || '';
+            cats.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = cat === categoriaActual ? 'tab-btn active' : 'tab-btn';
-                btn.innerText = cat; 
-                btn.onclick = function() { filtrar(cat, this); };
-                tabsContainer.appendChild(btn);
+                btn.innerText = cat;
+                btn.onclick = () => {
+                    categoriaActual = cat;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderizar(todosLosDatos.filter(i => i.categoria === cat));
+                };
+                container.appendChild(btn);
             });
-        }
-
-        function calcularTiempo(timestamp) {
-            if (!timestamp) return { texto: "", clase: "" };
-            const ahora = new Date().getTime();
-            const diff = timestamp - ahora;
-            const diffMinutos = Math.floor(diff / 1000 / 60);
-
-            if (diff <= 0 && diff > -7200000) return { texto: `EN JUEGO`, clase: "status-live" };
-            if (diff <= -7200000) return { texto: "FINALIZADO", clase: "status-ended" };
-
-            if (diff > 0) {
-                const horas = Math.floor(diffMinutos / 60);
-                const mins = diffMinutos % 60;
-                if (horas > 24) {
-                    let fecha = new Date(timestamp);
-                    let d = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
-                    let m = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
-                    return { texto: `${d}/${m} • ${fecha.getHours()}:${(fecha.getMinutes()<10?'0':'')+fecha.getMinutes()}`, clase: "status-future" };
-                }
-                if (horas === 0) return { texto: `En ${mins}m`, clase: "status-soon" };
-                return { texto: `En ${horas}h ${mins}m`, clase: "status-future" };
-            }
-            return { texto: "", clase: "" };
         }
 
         function renderizar(lista) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
-            
             lista.forEach(item => {
-                let contenidoIcono = '';
-                let mostrarIcono = true;
-                let esRepetido = item.categoria === "REPETIDOS";
-                
-                if (item.origen === "MyFootball" || esRepetido) {
-                    mostrarIcono = false; 
-                } else if (item.logo1 && item.logo2) {
-                    contenidoIcono = `
-                        <div class="team-logos">
-                            <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
-                            <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
-                        </div>
-                    `;
-                } else {
-                    contenidoIcono = `<i class="fa-solid fa-tv"></i>`;
-                }
-
-                let infoTiempo = { texto: item.origen, clase: "" };
-                if ((item.origen === "PimpleTV" || item.origen === "MyFootball") && item.timestamp) {
-                    infoTiempo = calcularTiempo(item.timestamp);
-                    item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
-                }
-
-                let botonesAccion = '';
-                if (item.enlaces && item.enlaces.length > 0) {
-                    botonesAccion += `<div class="ids-container">`;
-                    item.enlaces.forEach((stream) => {
-                        botonesAccion += `
-                        <div class="stream-pill">
-                            <img src="${stream.bandera}" class="lang-flag">
+                let botones = '';
+                const esRep = item.categoria === "REPETIDOS";
+                if (item.enlaces) {
+                    botones = '<div class="ids-container">';
+                    item.enlaces.forEach(s => {
+                        botones += `<div class="stream-pill">
+                            <img src="${s.bandera}" class="lang-flag">
                             <div style="display:flex; gap:6px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="width:30px; height:30px;" onclick="abrirEnlace('${stream.id}', event, false)"><i class="fa-solid fa-play"></i></div>` : ''}
-                                <div class="action-icon copy-btn" style="width:30px; height:30px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
+                                ${!isIOS ? `<div class="action-icon play-btn" style="width:30px; height:30px;" onclick="abrir('${s.id}', event, false)"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon copy-btn" style="width:30px; height:30px;" onclick="copiar('${s.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
-                    botonesAccion += `</div>`;
+                    botones += '</div>';
                 } else {
-                    let claseBoton = esRepetido ? "video-btn" : "play-btn";
-                    let iconoBoton = esRepetido ? "fa-video" : "fa-play";
-                    if (!isIOS) {
-                        botonesAccion += `<div class="action-icon ${claseBoton}" onclick="abrirEnlace('${item.id}', event, ${esRepetido})"><i class="fa-solid ${iconoBoton}"></i></div>`;
-                    }
-                    if (!esRepetido) {
-                        botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
-                    }
+                    const cl = esRep ? "video-btn" : "play-btn";
+                    const ic = esRep ? "fa-video" : "fa-play";
+                    botones = (!isIOS ? `<div class="action-icon ${cl}" onclick="abrir('${item.id}', event, ${esRep})"><i class="fa-solid ${ic}"></i></div>` : '') +
+                              (!esRep ? `<div class="action-icon copy-btn" onclick="copiar('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>` : '');
                 }
-
                 const row = document.createElement('div');
                 row.className = 'track-row';
-                row.innerHTML = `
-                    ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
-                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 5px;' : ''}">
-                        <div class="track-title">${item.titulo}</div>
-                        <div class="track-meta">
-                            <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
-                        </div>
-                    </div>
-                    <div class="actions-container" style="${!mostrarIcono ? 'flex: 1; justify-content: flex-end;' : ''}">${botonesAccion}</div>
-                `;
+                const icon = (item.logo1 && item.logo2) ? `<div class="track-icon-box"><div class="team-logos"><div class="logo-circle"><img src="${item.logo1}"></div><div class="logo-circle"><img src="${item.logo2}"></div></div></div>` : '';
+                row.innerHTML = `${icon}<div class="track-info" style="${!icon?'padding-left:5px;':''}"><div class="track-title">${item.titulo}</div><div class="track-meta"><span class="status-badge">${item.origen}</span></div></div><div class="actions-container" style="flex:1; justify-content:flex-end;">${botones}</div>`;
                 container.appendChild(row);
             });
         }
 
-        function actualizarContadores() {
-            document.querySelectorAll('.track-row[data-timestamp]').forEach(row => {
-                const ts = parseInt(row.dataset.timestamp);
-                const info = calcularTiempo(ts);
-                const badge = row.querySelector('.status-badge');
-                if (badge && info.texto) {
-                    badge.className = 'status-badge ' + info.clase;
-                    badge.innerText = info.texto;
-                }
-            });
-        }
-
-        function filtrar(categoria, btn) {
-            categoriaActual = categoria;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderizar(todosLosDatos.filter(i => i.categoria === categoria));
-        }
-
-        function filtrarBusqueda() {
-            const texto = document.getElementById('searchInput').value.toLowerCase();
-            renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(texto)));
-        }
-
-        function copiarID(texto, btnElemento, evento) {
-            if (evento) evento.stopPropagation();
-            navigator.clipboard.writeText(texto).then(() => {
-                const fila = btnElemento.closest('.track-row');
-                document.querySelectorAll('.track-row').forEach(r => r.classList.remove('copied'));
-                fila.classList.add('copied');
-            });
-        }
-
-        function abrirEnlace(id, evento, esWeb) {
-            if (evento) evento.stopPropagation();
-            if (esWeb) { window.open(id, '_blank'); } 
-            else { window.location.href = 'acestream://' + id; }
+        function abrir(id, ev, web) { ev.stopPropagation(); if(web) window.open(id, '_blank'); else window.location.href = 'acestream://'+id; }
+        function copiar(id, btn, ev) { ev.stopPropagation(); navigator.clipboard.writeText(id); btn.closest('.track-row').classList.add('copied'); }
+        function filtrarBusqueda() { 
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            renderizar(todosLosDatos.filter(i => (i.titulo + i.categoria).toLowerCase().includes(q))); 
         }
         iniciarCarga();
     </script>
