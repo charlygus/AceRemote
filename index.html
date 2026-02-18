@@ -1,154 +1,126 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AceRemote - Seccion Privada</title>
-    <style>
-        /* Estilos optimizados para Android TV */
-        body {
-            background-color: #121212;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            overflow-x: hidden;
-        }
+  <base target="_top">
+  <style>
+    :root {
+      --fondo: #0f0f0f;
+      --tarjeta: #1e1e1e;
+      --foco: #0056b3;
+      --texto: #ffffff;
+    }
 
-        h1 {
-            color: #f1f1f1;
-            font-size: 1.5rem;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-        }
+    body {
+      background-color: var(--fondo);
+      color: var(--texto);
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 30px;
+    }
 
-        .contenedor-lista {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
+    h1 {
+      font-size: 1.6rem;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+    }
 
-        .match-card {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-            border: 2px solid transparent;
-            outline: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .lista-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-        .match-card:focus, .match-card:hover {
-            background-color: #333;
-            border-color: #007bff;
-            transform: scale(1.02);
-        }
+    .item-partido {
+      background-color: var(--tarjeta);
+      padding: 20px;
+      border-radius: 10px;
+      border: 3px solid transparent;
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
 
-        .info-jornada {
-            font-size: 0.8rem;
-            color: #aaa;
-            text-transform: uppercase;
-        }
+    /* Estilos para el mando de Android TV */
+    .item-partido:focus {
+      background-color: #2a2a2a;
+      border-color: var(--foco);
+      transform: scale(1.02);
+    }
 
-        .equipo-texto {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
+    .nombre-partido {
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
 
-        .no-content {
-            text-align: center;
-            color: #666;
-            margin-top: 50px;
-        }
-    </style>
+    .categoria {
+      font-size: 0.8rem;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .loading {
+      text-align: center;
+      margin-top: 50px;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Partidos y Repeticiones: Barca y Villarreal</h1>
-    
-    <div id="lista-eventos" class="contenedor-lista">
+  <h1>Area Tecnica: Repeticiones y Jornada</h1>
+  
+  <div id="pantalla" class="lista-container">
+    <div class="loading">Cargando eventos filtrados...</div>
+  </div>
+
+  <script>
+    /**
+     * Lógica de UI y Ejecución Nativa
+     */
+
+    function cargarContenido() {
+      google.script.run
+        .withSuccessHandler(renderizar)
+        .obtenerPartidos();
+    }
+
+    function renderizar(partidos) {
+      const pantalla = document.getElementById('pantalla');
+      
+      if (partidos.length === 0) {
+        pantalla.innerHTML = '<div>No hay eventos disponibles para los filtros actuales.</div>';
+        return;
+      }
+
+      pantalla.innerHTML = partidos.map(p => `
+        <div class="item-partido" tabindex="0" onclick="lanzarReproductor('${p.id}')">
+          <div>
+            <div class="categoria">${p.cat}</div>
+            <div class="nombre-partido">${p.title}</div>
+          </div>
+          <div style="color:var(--foco)">REPRODUCIR</div>
         </div>
+      `).join('');
 
-    <script>
-        /**
-         * COPIA MAESTRA - ACE REMOTE WEB APP
-         * Actualizado: 18 de febrero de 2026
-         */
+      // Auto-foco en el primer elemento para el mando a distancia
+      setTimeout(() => {
+        document.querySelector('.item-partido')?.focus();
+      }, 100);
+    }
 
-        const AppDeportiva = {
-            // Configuración de filtrado
-            config: {
-                equiposVip: ['BARCELONA', 'BARSA', 'VILLARREAL'],
-                excluir: 'CHAMPIONS',
-                // Protocolo para reproductor nativo (evita anuncios web)
-                playerProtocol: 'acestream://' 
-            },
+    function lanzarReproductor(id) {
+      // Forzado de reproductor nativo para saltar anuncios web
+      const intentUrl = `acestream://?content_id=${id}&player=native`;
+      console.log("Lanzando: " + intentUrl);
+      window.location.href = intentUrl;
+    }
 
-            // Datos de la última jornada y semana (Simulados con IDs de AceStream)
-            obtenerDatos() {
-                return [
-                    { title: 'Girona vs FC Barcelona', id: 'ace_barca_01', cat: 'Ultima Jornada' },
-                    { title: 'Getafe vs Villarreal', id: 'ace_villarreal_01', cat: 'Ultima Jornada' },
-                    { title: 'Repeticion: Barcelona vs Alaves', id: 'ace_barca_replay', cat: 'Semana' },
-                    { title: 'Repeticion: Villarreal vs Betis', id: 'ace_villarreal_replay', cat: 'Semana' },
-                    { title: 'Bayern vs Barcelona', id: 'ace_ucl_skip', cat: 'Champions' }, // Se filtrará
-                    { title: 'Real Madrid vs Sevilla', id: 'ace_other', cat: 'Ultima Jornada' } // Se filtrará
-                ];
-            },
-
-            // Motor de filtrado
-            filtrarContenido(datos) {
-                return datos.filter(item => {
-                    const nombre = item.title.toUpperCase();
-                    const categoria = item.cat.toUpperCase();
-                    
-                    const coincideEquipo = this.config.equiposVip.some(equipo => nombre.includes(equipo));
-                    const esChampions = nombre.includes(this.config.excluir) || categoria.includes(this.config.excluir);
-
-                    return coincideEquipo && !esChampions;
-                });
-            },
-
-            // Renderizado en pantalla (Sin emojis)
-            renderizar() {
-                const contenedor = document.getElementById('lista-eventos');
-                const crudo = this.obtenerDatos();
-                const filtrados = this.filtrarContenido(crudo);
-
-                if (filtrados.length === 0) {
-                    contenedor.innerHTML = '<div class="no-content">No hay partidos disponibles para estos filtros.</div>';
-                    return;
-                }
-
-                contenedor.innerHTML = filtrados.map(partido => `
-                    <div class="match-card" tabindex="0" onclick="AppDeportiva.lanzarPlayer('${partido.id}')">
-                        <div>
-                            <div class="info-jornada">${partido.cat}</div>
-                            <div class="equipo-texto">${partido.title}</div>
-                        </div>
-                        <div style="color: #007bff; font-weight: bold;">VER AHORA</div>
-                    </div>
-                `).join('');
-                
-                // Poner el foco en el primer elemento para control con mando TV
-                document.querySelector('.match-card')?.focus();
-            },
-
-            // Lanzamiento directo al reproductor nativo (Sin Ads)
-            lanzarPlayer(contentId) {
-                // Forzamos el uso del motor nativo de Android TV (ExoPlayer/VLC)
-                const urlFinal = `${this.config.playerProtocol}${contentId}?player=native`;
-                console.log("Accediendo a: " + urlFinal);
-                window.location.href = urlFinal;
-            }
-        };
-
-        // Iniciar App
-        document.addEventListener('DOMContentLoaded', () => AppDeportiva.renderizar());
-    </script>
+    // Iniciar al cargar
+    window.onload = cargarContenido;
+  </script>
 </body>
 </html>
