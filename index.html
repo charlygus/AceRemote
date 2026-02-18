@@ -16,7 +16,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        /* Estilos del Carrusel Horizontal que te gustaba */
+        /* Estilos del Carrusel Horizontal */
         .swipe-container {
             display: flex;
             gap: 10px;
@@ -81,32 +81,70 @@
             container.innerHTML = ''; 
             tabsContainer.innerHTML = '';
             loader.style.display = 'block';
+            loaderText.innerText = '0%';
             
-            let porcentaje = 0;
-            let intervalo = setInterval(() => {
-                if (porcentaje < 98) {
-                    porcentaje += Math.floor(Math.random() * 10) + 5;
-                    if(porcentaje > 99) porcentaje = 99;
-                    loaderText.innerText = porcentaje + '%';
-                }
-            }, 150);
+            // Reiniciamos
+            todosLosDatos = [];
+            
+            // Definimos las 3 peticiones separadas
+            const requests = [
+                { url: API_URL + '?source=pimple', name: 'Pimple' },
+                { url: API_URL + '?source=mf', name: 'MyFootball' },
+                { url: API_URL + '?source=ace', name: 'Otros' }
+            ];
+
+            let completados = 0;
+            const promesas = requests.map(req => {
+                return fetch(req.url)
+                    .then(r => r.json())
+                    .then(data => {
+                        completados++;
+                        const p = Math.floor((completados / requests.length) * 100);
+                        loaderText.innerText = p + '%';
+                        return data;
+                    })
+                    .catch(e => {
+                        console.error('Error en ' + req.name, e);
+                        completados++;
+                        loaderText.innerText = Math.floor((completados / requests.length) * 100) + '%';
+                        return []; // Retorna vacío si falla, para no romper todo
+                    });
+            });
 
             try {
-                const response = await fetch(API_URL);
-                const datos = await response.json();
-                clearInterval(intervalo);
-                loaderText.innerText = '100%';
+                // Esperamos a que terminen las 3, pero ya hemos actualizado el % en tiempo real
+                const resultados = await Promise.all(promesas);
+                
+                // Unimos todos los arrays (aplanar)
+                todosLosDatos = resultados.flat();
+                
+                // Eliminamos duplicados por ID
+                todosLosDatos = eliminarDuplicados(todosLosDatos);
+
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    todosLosDatos = datos;
-                    generarPestanas(datos);
-                    renderizar(datos.filter(i => i.categoria === categoriaActual));
-                    setInterval(actualizarContadores, 60000);
-                }, 200);
+                    if (todosLosDatos.length > 0) {
+                        generarPestanas(todosLosDatos);
+                        renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
+                        setInterval(actualizarContadores, 60000);
+                    } else {
+                        container.innerHTML = `<p style="text-align:center; color:#555; margin-top:40px;">No se encontraron eventos.</p>`;
+                    }
+                }, 300);
+
             } catch (error) {
-                clearInterval(intervalo);
                 loaderText.innerText = 'Error';
+                console.error(error);
             }
+        }
+
+        function eliminarDuplicados(datos) {
+            const vistos = new Set();
+            return datos.filter(item => {
+                if (vistos.has(item.id)) return false;
+                vistos.add(item.id);
+                return true;
+            });
         }
 
         function generarPestanas(datos) {
@@ -284,6 +322,8 @@
             if (navigator.vibrate) navigator.vibrate(50);
             window.location.href = 'acestream://' + id;
         }
+        
+        // Iniciamos al cargar
         iniciarCarga();
     </script>
 </body>
