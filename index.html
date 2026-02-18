@@ -17,7 +17,6 @@
     
     <style>
         body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-        
         .track-row {
             will-change: transform;
             margin-bottom: 12px !important;
@@ -26,32 +25,14 @@
             background: rgba(255, 255, 255, 0.03);
             border-radius: 8px;
         }
-
-        .ids-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: flex-end;
-            margin-top: 5px;
-        }
-
+        .ids-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 5px; }
         .stream-pill {
-            flex: 0 0 auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.12);
-            padding: 6px 8px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+            background: rgba(255, 255, 255, 0.12); padding: 6px 8px; border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
-
         .lang-flag { width: 20px; height: 13px; margin-bottom: 5px; border-radius: 1px; display: block; }
-
-        /* Estilo para los botones de REPETIDOS */
-        .repeat-btn { background: #d35400 !important; color: white !important; }
-        .full-match-btn { background: #27ae60 !important; color: white !important; }
+        .video-btn { background: #d35400 !important; color: white !important; }
     </style>
 </head>
 <body>
@@ -88,17 +69,12 @@
             const tabsContainer = document.getElementById('tabs-container');
             const loader = document.getElementById('loader');
             const loaderText = document.getElementById('loader-text');
-            
-            container.innerHTML = ''; 
-            tabsContainer.innerHTML = '';
+            container.innerHTML = ''; tabsContainer.innerHTML = '';
             loader.style.display = 'block';
             
             let porcentaje = 0;
             let intervalo = setInterval(() => {
-                if (porcentaje < 98) {
-                    porcentaje += 5;
-                    loaderText.innerText = porcentaje + '%';
-                }
+                if (porcentaje < 98) { porcentaje += 5; loaderText.innerText = porcentaje + '%'; }
             }, 100);
 
             try {
@@ -111,6 +87,7 @@
                     todosLosDatos = datos;
                     generarPestanas(datos);
                     renderizar(todosLosDatos.filter(i => i.categoria === categoriaActual));
+                    setInterval(actualizarContadores, 60000);
                 }, 200);
             } catch (error) {
                 clearInterval(intervalo);
@@ -124,10 +101,8 @@
             const orden = ["PIMPLE TV", "MYFOOTBALL", "REPETIDOS", "OTROS"];
             
             categorias.sort((a, b) => {
-                let idxA = orden.indexOf(a);
-                let idxB = orden.indexOf(b);
-                if (idxA === -1) idxA = 80; 
-                if (idxB === -1) idxB = 80;
+                let idxA = orden.indexOf(a); let idxB = orden.indexOf(b);
+                if (idxA === -1) idxA = 80; if (idxB === -1) idxB = 80;
                 return idxA - idxB;
             });
 
@@ -142,14 +117,59 @@
             });
         }
 
+        function calcularTiempo(timestamp) {
+            if (!timestamp) return { texto: "", clase: "" };
+            const ahora = new Date().getTime();
+            const diff = timestamp - ahora;
+            const diffMinutos = Math.floor(diff / 1000 / 60);
+
+            if (diff <= 0 && diff > -7200000) return { texto: `EN JUEGO`, clase: "status-live" };
+            if (diff <= -7200000) return { texto: "FINALIZADO", clase: "status-ended" };
+
+            if (diff > 0) {
+                const horas = Math.floor(diffMinutos / 60);
+                const mins = diffMinutos % 60;
+                if (horas > 24) {
+                    let fecha = new Date(timestamp);
+                    let d = (fecha.getDate() < 10 ? '0' : '') + fecha.getDate();
+                    let m = (fecha.getMonth() + 1 < 10 ? '0' : '') + (fecha.getMonth() + 1);
+                    return { texto: `${d}/${m} • ${fecha.getHours()}:${(fecha.getMinutes()<10?'0':'')+fecha.getMinutes()}`, clase: "status-future" };
+                }
+                if (horas === 0) return { texto: `En ${mins}m`, clase: "status-soon" };
+                return { texto: `En ${horas}h ${mins}m`, clase: "status-future" };
+            }
+            return { texto: "", clase: "" };
+        }
+
         function renderizar(lista) {
             const container = document.getElementById('contenedor-eventos');
             container.innerHTML = '';
             
             lista.forEach(item => {
-                let botonesAccion = '';
-                let esRepetido = item.isWeb;
+                let contenidoIcono = '';
+                let mostrarIcono = true;
+                let esRepetido = item.categoria === "REPETIDOS";
+                
+                if (item.origen === "MyFootball" || esRepetido) {
+                    mostrarIcono = false; 
+                } else if (item.logo1 && item.logo2) {
+                    contenidoIcono = `
+                        <div class="team-logos">
+                            <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
+                            <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
+                        </div>
+                    `;
+                } else {
+                    contenidoIcono = `<i class="fa-solid fa-tv"></i>`;
+                }
 
+                let infoTiempo = { texto: item.origen, clase: "" };
+                if ((item.origen === "PimpleTV" || item.origen === "MyFootball") && item.timestamp) {
+                    infoTiempo = calcularTiempo(item.timestamp);
+                    item.titulo = item.titulo.replace(/\[\d{2}:\d{2}\]\s*/, '');
+                }
+
+                let botonesAccion = '';
                 if (item.enlaces && item.enlaces.length > 0) {
                     botonesAccion += `<div class="ids-container">`;
                     item.enlaces.forEach((stream) => {
@@ -157,18 +177,17 @@
                         <div class="stream-pill">
                             <img src="${stream.bandera}" class="lang-flag">
                             <div style="display:flex; gap:6px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="width:30px; height:30px;" onclick="abrirEnlace('${stream.id}', event, ${esRepetido || false})"><i class="fa-solid fa-play"></i></div>` : ''}
+                                ${!isIOS ? `<div class="action-icon play-btn" style="width:30px; height:30px;" onclick="abrirEnlace('${stream.id}', event, false)"><i class="fa-solid fa-play"></i></div>` : ''}
                                 <div class="action-icon copy-btn" style="width:30px; height:30px;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
                     botonesAccion += `</div>`;
                 } else {
-                    let claseExtra = item.titulo.includes("COMPLETO") ? "full-match-btn" : (esRepetido ? "repeat-btn" : "play-btn");
-                    let icono = esRepetido ? "fa-video" : "fa-play";
-                    
+                    let claseBoton = esRepetido ? "video-btn" : "play-btn";
+                    let iconoBoton = esRepetido ? "fa-video" : "fa-play";
                     if (!isIOS) {
-                        botonesAccion += `<div class="action-icon ${claseExtra}" onclick="abrirEnlace('${item.id}', event, ${esRepetido || false})"><i class="fa-solid ${icono}"></i></div>`;
+                        botonesAccion += `<div class="action-icon ${claseBoton}" onclick="abrirEnlace('${item.id}', event, ${esRepetido})"><i class="fa-solid ${iconoBoton}"></i></div>`;
                     }
                     if (!esRepetido) {
                         botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
@@ -178,15 +197,28 @@
                 const row = document.createElement('div');
                 row.className = 'track-row';
                 row.innerHTML = `
-                    <div class="track-info" style="padding-left: 5px;">
+                    ${mostrarIcono ? `<div class="track-icon-box">${contenidoIcono}</div>` : ''}
+                    <div class="track-info" style="${!mostrarIcono ? 'padding-left: 5px;' : ''}">
                         <div class="track-title">${item.titulo}</div>
                         <div class="track-meta">
-                            <span class="status-badge">${item.origen}</span>
+                            <span class="status-badge ${infoTiempo.clase}">${infoTiempo.texto}</span>
                         </div>
                     </div>
-                    <div class="actions-container" style="flex: 1; justify-content: flex-end;">${botonesAccion}</div>
+                    <div class="actions-container" style="${!mostrarIcono ? 'flex: 1; justify-content: flex-end;' : ''}">${botonesAccion}</div>
                 `;
                 container.appendChild(row);
+            });
+        }
+
+        function actualizarContadores() {
+            document.querySelectorAll('.track-row[data-timestamp]').forEach(row => {
+                const ts = parseInt(row.dataset.timestamp);
+                const info = calcularTiempo(ts);
+                const badge = row.querySelector('.status-badge');
+                if (badge && info.texto) {
+                    badge.className = 'status-badge ' + info.clase;
+                    badge.innerText = info.texto;
+                }
             });
         }
 
@@ -213,11 +245,8 @@
 
         function abrirEnlace(id, evento, esWeb) {
             if (evento) evento.stopPropagation();
-            if (esWeb) {
-                window.open(id, '_blank');
-            } else {
-                window.location.href = 'acestream://' + id;
-            }
+            if (esWeb) { window.open(id, '_blank'); } 
+            else { window.location.href = 'acestream://' + id; }
         }
         iniciarCarga();
     </script>
