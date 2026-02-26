@@ -204,15 +204,16 @@
                 let contenidoIcono = '';
                 let mostrarIcono = true;
                 
-                if (item.origen === "MyFootball") {
-                    mostrarIcono = false; 
-                } else if (item.logo1 && item.logo2) {
+                // LÓGICA ACTUALIZADA PARA PERMITIR LOGOS DE MYFOOTBALL
+                if (item.logo1 && item.logo2) {
                     contenidoIcono = `
                         <div class="team-logos">
                             <div class="logo-circle"><img src="${item.logo1}" alt="L"></div>
                             <div class="logo-circle"><img src="${item.logo2}" alt="V"></div>
                         </div>
                     `;
+                } else if (item.origen === "MyFootball") {
+                    mostrarIcono = false; 
                 } else {
                     let icono = 'fa-tv';
                     const txt = (item.titulo + item.categoria).toUpperCase();
@@ -232,7 +233,6 @@
                 if (item.enlaces && item.enlaces.length > 0) {
                     botonesAccion += `<div class="swipe-container" style="margin-left:auto;">`;
                     item.enlaces.forEach((stream) => {
-                        // AJUSTE MÁXIMO: Icono 32px, Caja 50px, Gap reducido a 6px
                         botonesAccion += `
                         <div class="stream-pill">
                             <img src="${stream.bandera}" style="width:26px; height:16px; margin-bottom:8px; border-radius:2px;" alt="bandera">
