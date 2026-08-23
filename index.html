@@ -319,7 +319,7 @@
             
             if (isIOS) {
                 // Genera la URL optimizada HLS con la nueva IP de Tailscale y el token para abrir VLC en iOS
-                const streamUrl = `http://${TAILSCALE_IP}:${PORT}/ace/manifest.m3u8?id=${id}&access_token=${TOKEN}`;
+                const streamUrl = `http://${TAILSCALE_IP}:${PORT}/ace/getstream?id=${id}&access_token=${TOKEN}`;
                 const vlcCallbackUrl = `vlc-x-callback://x-callback-url/stream?url=` + encodeURIComponent(streamUrl);
                 window.location.href = vlcCallbackUrl;
             } else {
