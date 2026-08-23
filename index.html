@@ -35,7 +35,6 @@
             flex-direction: column;
             align-items: center;
             background: rgba(255, 255, 255, 0.08);
-            /* REDUCCIÓN DE PADDING: Menos aire alrededor de los botones */
             padding: 6px 8px; 
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -69,6 +68,11 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyaDrtYeHao6x9R8EWLh6gKAcStTmQuy5xaI3sfGmoYvrR4wSEpggrGEaa7kApO3LjI/exec'; 
         
+        // --- CONFIGURACIÓN DE RED REMOTA PARA IOS ---
+        const TAILSCALE_IP = "100.110.26.77";
+        const PORT = "6878";
+        const TOKEN = "qn7EzNF2SFIB";
+
         let todosLosDatos = []; 
         let categoriaActual = '';
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -236,16 +240,14 @@
                         <div class="stream-pill">
                             <img src="${stream.bandera}" style="width:26px; height:16px; margin-bottom:8px; border-radius:2px;" alt="bandera">
                             <div style="display:flex; gap:6px;">
-                                ${!isIOS ? `<div class="action-icon play-btn" style="margin:0; width:50px; height:50px; font-size:32px; display:flex; align-items:center; justify-content:center;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>` : ''}
+                                <div class="action-icon play-btn" style="margin:0; width:50px; height:50px; font-size:32px; display:flex; align-items:center; justify-content:center;" onclick="abrirEnlace('${stream.id}', event)"><i class="fa-solid fa-play"></i></div>
                                 <div class="action-icon copy-btn" style="margin:0; width:50px; height:50px; font-size:32px; display:flex; align-items:center; justify-content:center;" onclick="copiarID('${stream.id}', this, event)"><i class="fa-regular fa-copy"></i></div>
                             </div>
                         </div>`;
                     });
                     botonesAccion += `</div>`;
                 } else {
-                    if (!isIOS) {
-                        botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
-                    }
+                    botonesAccion += `<div class="action-icon play-btn" onclick="abrirEnlace('${item.id}', event)"><i class="fa-solid fa-play"></i></div>`;
                     botonesAccion += `<div class="action-icon copy-btn" onclick="copiarID('${item.id}', this, event)"><i class="fa-regular fa-copy"></i></div>`;
                 }
 
@@ -314,7 +316,16 @@
         function abrirEnlace(id, evento) {
             if (evento) evento.stopPropagation();
             if (navigator.vibrate) navigator.vibrate(50);
-            window.location.href = 'acestream://' + id;
+            
+            if (isIOS) {
+                // Genera la URL optimizada HLS con la nueva IP de Tailscale y el token para abrir VLC en iOS
+                const streamUrl = `http://${TAILSCALE_IP}:${PORT}/ace/manifest.m3u8?id=${id}&access_token=${TOKEN}`;
+                const vlcCallbackUrl = `vlc-x-callback://x-callback-url/stream?url=` + encodeURIComponent(streamUrl);
+                window.location.href = vlcCallbackUrl;
+            } else {
+                // Comportamiento habitual para Android y PC
+                window.location.href = 'acestream://' + id;
+            }
         }
         
         iniciarCarga();
